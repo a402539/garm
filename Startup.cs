@@ -38,6 +38,12 @@ namespace garm
                     appBranch.UseVectorTile();
                 }
             );
+            app.MapWhen(
+                context => BoxTiles.IsValid(context.Request.Path.ToString()),
+                appBranch => {
+                    appBranch.UseBoxTiles();
+                }
+            );
 
             app.UseHttpsRedirection();
             app.UseDefaultFiles();
