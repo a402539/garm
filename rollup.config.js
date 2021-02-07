@@ -14,7 +14,7 @@ export default [
             sourcemap: true,
             name: 'D3T',
             globals: {
-                'd3': 'd3',                
+                'leaflet': 'L',
             },
         },
         plugins: [                      

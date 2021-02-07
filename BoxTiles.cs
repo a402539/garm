@@ -8,12 +8,16 @@ using Microsoft.Extensions.Configuration;
 using Npgsql;
 using NpgsqlTypes;
 using System.Data;
+using System.Globalization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace garm
 {
     public class BoxTiles
     {
-        static Regex _rxValid = new Regex(@"/box/(?<xmin>\d+\.\d+),(?<ymin>\d+\.\d+),(?<xmax>\d+\.\d+),(?<ymax>\d+\.\d+)");
+        static Regex _rxValid = new Regex(@"/box/(?<xmin>\-?\d+\.\d+),(?<ymin>\-?\d+\.\d+),(?<xmax>\-?\d+\.\d+),(?<ymax>\-?\d+\.\d+)");
+        static IFormatProvider culture = CultureInfo.InvariantCulture;
         
         private readonly RequestDelegate _next;
 
@@ -28,27 +32,34 @@ namespace garm
         public async Task Invoke(HttpContext context)
         {            
             var m = _rxValid.Match(context.Request.Path);
-            int xmin = float.Parse(m.Groups["xmin"].Value);
-            int ymin = float.Parse(m.Groups["ymin"].Value);
-            int xmax = float.Parse(m.Groups["xmax"].Value);
-            int ymax = float.Parse(m.Groups["ymax"].Value);
+            double xmin = double.Parse(m.Groups["xmin"].Value, culture);
+            double ymin = double.Parse(m.Groups["ymin"].Value, culture);
+            double xmax = double.Parse(m.Groups["xmax"].Value, culture);
+            double ymax = double.Parse(m.Groups["ymax"].Value, culture);
 
             try {
                 await using var conn = new NpgsqlConnection(Configuration.GetConnectionString("Default"));
                 await conn.OpenAsync();
-                
-                await using (var cmd = new NpgsqlCommand("SELECT cat.get_box2d_tiles(@xmin, @ymin, @xmax, @ymax)", conn))
+
+                await using (var cmd = new NpgsqlCommand("SELECT * FROM dbo.get_box2d_tiles(@xmin, @ymin, @xmax, @ymax)", conn))
                 {
                     cmd.Parameters.AddWithValue("xmin", xmin);
                     cmd.Parameters.AddWithValue("ymin", ymin);
                     cmd.Parameters.AddWithValue("xmax", xmax);
                     cmd.Parameters.AddWithValue("ymax", ymax);
-                    await cmd.ExecuteNonQueryAsync();
-                    byte[] mvt = p.Value as byte[];
-                    
-                    context.Response.ContentType = "application/json";
-                    await context.Response.Body.WriteAsync(mvt, 0, mvt.Length);
-                }
+
+                    var json = new JArray();
+                    await using (var reader = await cmd.ExecuteReaderAsync())                    
+                    while (await reader.ReadAsync()) {
+                        json.Add(new JObject(
+                            new JProperty("x", reader.GetInt32(0)),
+                            new JProperty("y", reader.GetInt32(1)),
+                            new JProperty("z", reader.GetInt32(2))
+                        ));
+                    }
+                    context.Response.ContentType = "application/json";                    
+                    await context.Response.WriteAsync(json.ToString(), Encoding.UTF8);                    
+                }                
             }
             catch (Exception e) {
                 await _next.Invoke(context);

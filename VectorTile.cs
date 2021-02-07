@@ -36,7 +36,7 @@ namespace garm
                 await using var conn = new NpgsqlConnection(Configuration.GetConnectionString("Default"));
                 await conn.OpenAsync();
                 
-                await using (var cmd = new NpgsqlCommand("SELECT cat.mvt_ls8_tile(@x, @y, @z)", conn))
+                await using (var cmd = new NpgsqlCommand("SELECT dbo.mvt_ls8_tile(@x, @y, @z)", conn))
                 {
                     cmd.Parameters.AddWithValue("x", x);
                     cmd.Parameters.AddWithValue("y", y);

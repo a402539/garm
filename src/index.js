@@ -1,63 +1,58 @@
 import './index.css';
-import * as d3 from 'd3';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import {VectorTile} from '@mapbox/vector-tile';
 import Protobuf from 'pbf';
-import {tile} from 'd3-tile';
 
-function geojson([x, y, z], layer, filter = () => true) {
-    if (!layer) return;
-    const features = [];
-    for (let i = 0; i < layer.length; ++i) {
-        const f = layer.feature(i).toGeoJSON(x, y, z);
-        if (filter.call(null, f, i, features)) {
-          features.push(f);
-        }
-    }
-    return {type: "FeatureCollection", features};
+async function getboxtiles(xmin, ymin, xmax, ymax, layer) {
+    const response = await fetch(`/box/${xmin.toFixed(6)},${ymin.toFixed(6)},${xmax.toFixed(6)},${ymax.toFixed(6)}`);
+    const tiles = await response.json();
+    tiles.forEach(({x, y, z}) => {
+        fetch(`/tile/${x}/${y}/${z}`)
+        .then(res => res.blob())
+        .then(blob => blob.arrayBuffer())
+        .then(buf => {
+            const {layers} = new VectorTile(new Protobuf(buf));
+            Object.keys(layers).reduce((b,k) => {
+                const g = geojson([x, y, z], layers[k]);
+                layer.addData(g);
+            }, []);
+        });                        
+    });    
 }
 
-window.addEventListener('load', async () => {    
+let cache = {};
+
+function geojson([x, y, z], layer) {
+    if (!layer) return;       
+    for (let i = 0; i < layer.length; ++i) {
+        const f = layer.feature(i).toGeoJSON(x, y, z);
+        const {properties: {uid}} = f;
+        cache[uid] = f;
+    }    
+}
+
+const renderer = L.canvas();
+
+window.addEventListener('load', async () => {
+    const map = L.map('map', {renderer}).setView([55.45, 37.37], 6);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    const tiles = L.geoJSON();
+    tiles.addTo(map);
+
+    async function tilehandler() { 
+        tiles.clearLayers();               
+        const zoom = map.getZoom();
+        const {min, max} = L.CRS.EPSG3857.getProjectedBounds(zoom);        
+        await getboxtiles(min.x, min.y, max.x, max.y, tiles);
+    }
+
+    map.on('moveend', tilehandler);
+    map.on('zoomend', tilehandler);
     
-    const canvas = document.querySelector('canvas');
-
-    const width = canvas.width;
-    const height = canvas.height;
-
-    const context = canvas.getContext('2d');
-
-    // const land = topojson.feature(world, world.objects.land);
-
-    const projection = d3.geoMercator()
-        .center([100, 0])
-        .scale(Math.pow(2, 8) / (2 * Math.PI))
-        .translate([width / 2, height / 2])
-        .precision(0);
-
-    const d3t = tile()
-        .size([width, height])
-        .scale(projection.scale() * 2 * Math.PI)
-        .translate(projection([0, 0]));
-
-    const tiles = await Promise.all(d3t().map(async d => {
-        const buf = await d3.buffer(`tile/${d[2]}/${d[0]}/${d[1]}`);
-        d.layers = new VectorTile(new Protobuf(buf)).layers;
-        return d;
-    }));
-
-    const path = d3.geoPath(projection, context);
-
-    // context.save();
-
-    tiles.forEach(d => {
-        context.beginPath();
-        const feature = geojson(d, d.layers.ls8, d => true);
-        path(feature);
-        context.lineWidth = 1;
-        context.strokeStyle = "#FF0000";
-        context.stroke();
-        // context.restore();
-    });
-            
-    
-
+    await tilehandler();
 });
