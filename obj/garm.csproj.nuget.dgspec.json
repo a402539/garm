@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\projects\\garm\\garm.csproj": {}
+    "E:\\projects\\garm\\garm.csproj": {}
   },
   "projects": {
-    "C:\\projects\\garm\\garm.csproj": {
+    "E:\\projects\\garm\\garm.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\projects\\garm\\garm.csproj",
+        "projectUniqueName": "E:\\projects\\garm\\garm.csproj",
         "projectName": "garm",
-        "projectPath": "C:\\projects\\garm\\garm.csproj",
-        "packagesPath": "C:\\Users\\laoca\\.nuget\\packages\\",
-        "outputPath": "C:\\projects\\garm\\obj\\",
+        "projectPath": "E:\\projects\\garm\\garm.csproj",
+        "packagesPath": "C:\\Users\\marunov.SCANEX\\.nuget\\packages\\",
+        "outputPath": "E:\\projects\\garm\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
         ],
         "configFilePaths": [
-          "C:\\Users\\laoca\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\marunov.SCANEX\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -25,7 +25,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "https://api.nuget.org/v3/index.json": {}
+          "https://www.nuget.org/api/v2/": {}
         },
         "frameworks": {
           "net5.0": {
@@ -70,7 +70,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.100\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.102\\RuntimeIdentifierGraph.json"
         }
       }
     }

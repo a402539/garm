@@ -5,6 +5,7 @@ using System;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using NpgsqlTypes;
 using System.Data;
@@ -13,16 +14,17 @@ namespace garm
 {
     public class VectorTile
     {
-        static Regex _rxValid = new Regex(@"/tile/(?<z>\d{1,2})/(?<x>\d+)/(?<y>\d+)");
-        
+        private readonly ILogger _logger;
+        static Regex _rxValid = new Regex(@"/tile/(?<z>\d{1,2})/(?<x>\d+)/(?<y>\d+)");        
         private readonly RequestDelegate _next;
 
         public IConfiguration Configuration { get; }
 
-        public VectorTile(RequestDelegate next, IConfiguration configuration)
+        public VectorTile(RequestDelegate next, IConfiguration configuration, ILogger<VectorTile> logger)
         {
             _next = next;
             Configuration = configuration;
+            _logger = logger;
         }
 
         public async Task Invoke(HttpContext context)
@@ -36,7 +38,7 @@ namespace garm
                 await using var conn = new NpgsqlConnection(Configuration.GetConnectionString("Default"));
                 await conn.OpenAsync();
                 
-                await using (var cmd = new NpgsqlCommand("SELECT dbo.mvt_ls8_tile(@x, @y, @z)", conn))
+                await using (var cmd = new NpgsqlCommand("SELECT cat.mvt_ls8_tile(@x, @y, @z)", conn))
                 {
                     cmd.Parameters.AddWithValue("x", x);
                     cmd.Parameters.AddWithValue("y", y);
@@ -52,6 +54,7 @@ namespace garm
                 }
             }
             catch (Exception e) {
+                _logger.LogError(e.ToString());
                 await _next.Invoke(context);
             }                                
         }

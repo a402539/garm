@@ -5,6 +5,7 @@ using System;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using NpgsqlTypes;
 using System.Data;
@@ -16,6 +17,7 @@ namespace garm
 {
     public class BoxTiles
     {
+        private readonly ILogger _logger;
         static Regex _rxValid = new Regex(@"/box/(?<xmin>\-?\d+\.\d+),(?<ymin>\-?\d+\.\d+),(?<xmax>\-?\d+\.\d+),(?<ymax>\-?\d+\.\d+)");
         static IFormatProvider culture = CultureInfo.InvariantCulture;
         
@@ -23,10 +25,11 @@ namespace garm
 
         public IConfiguration Configuration { get; }
 
-        public BoxTiles(RequestDelegate next, IConfiguration configuration)
+        public BoxTiles(RequestDelegate next, IConfiguration configuration, ILogger<BoxTiles> logger)
         {
             _next = next;
             Configuration = configuration;
+            _logger = logger;
         }
 
         public async Task Invoke(HttpContext context)
@@ -41,7 +44,7 @@ namespace garm
                 await using var conn = new NpgsqlConnection(Configuration.GetConnectionString("Default"));
                 await conn.OpenAsync();
 
-                await using (var cmd = new NpgsqlCommand("SELECT * FROM dbo.get_box2d_tiles(@xmin, @ymin, @xmax, @ymax)", conn))
+                await using (var cmd = new NpgsqlCommand("SELECT * FROM cat.get_box2d_tiles(@xmin, @ymin, @xmax, @ymax)", conn))
                 {
                     cmd.Parameters.AddWithValue("xmin", xmin);
                     cmd.Parameters.AddWithValue("ymin", ymin);
@@ -62,6 +65,7 @@ namespace garm
                 }                
             }
             catch (Exception e) {
+                _logger.LogError(e.ToString());
                 await _next.Invoke(context);
             }                                
         }

@@ -1,12 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "qmI7fUevlarZnt3K2oOMI7ASxTwOMSrowey/jLwf9b/OjFBneiPea0dQfH7BYSxnE9nloYkj7L6UuZsyqLQF2w==",
+  "dgSpecHash": "ScvTTFPcwR00VA1N3gR6E7AhZM6G1yh72cUMLcSAGfA4MpYhtphAIk0abZFPf5GFmEr3RAJe9vHDzI4hNoLJug==",
   "success": true,
-  "projectFilePath": "C:\\projects\\garm\\garm.csproj",
+  "projectFilePath": "E:\\projects\\garm\\garm.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\laoca\\.nuget\\packages\\newtonsoft.json\\12.0.3\\newtonsoft.json.12.0.3.nupkg.sha512",
-    "C:\\Users\\laoca\\.nuget\\packages\\npgsql\\5.0.3\\npgsql.5.0.3.nupkg.sha512",
-    "C:\\Users\\laoca\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\4.6.0\\system.runtime.compilerservices.unsafe.4.6.0.nupkg.sha512"
+    "C:\\Users\\marunov.SCANEX\\.nuget\\packages\\newtonsoft.json\\12.0.3\\newtonsoft.json.12.0.3.nupkg.sha512",
+    "C:\\Users\\marunov.SCANEX\\.nuget\\packages\\npgsql\\5.0.3\\npgsql.5.0.3.nupkg.sha512",
+    "C:\\Users\\marunov.SCANEX\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\4.6.0\\system.runtime.compilerservices.unsafe.4.6.0.nupkg.sha512"
   ],
   "logs": []
 }

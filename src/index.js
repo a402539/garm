@@ -4,32 +4,52 @@ import 'leaflet/dist/leaflet.css';
 import {VectorTile} from '@mapbox/vector-tile';
 import Protobuf from 'pbf';
 
-async function getboxtiles(xmin, ymin, xmax, ymax, layer) {
-    const response = await fetch(`/box/${xmin.toFixed(6)},${ymin.toFixed(6)},${xmax.toFixed(6)},${ymax.toFixed(6)}`);
-    const tiles = await response.json();
-    tiles.forEach(({x, y, z}) => {
+let abortController = new AbortController();
+
+async function getboxtiles(xmin, ymin, xmax, ymax, tiles) {
+    abortController.abort();
+    abortController = new AbortController();
+    const response = await fetch(`/box/${xmin.toFixed(6)},${ymin.toFixed(6)},${xmax.toFixed(6)},${ymax.toFixed(6)}`, { signal: abortController.signal });
+    const items = await response.json();
+    items.forEach(({x, y, z}) => {
         fetch(`/tile/${x}/${y}/${z}`)
         .then(res => res.blob())
         .then(blob => blob.arrayBuffer())
         .then(buf => {
             const {layers} = new VectorTile(new Protobuf(buf));
-            Object.keys(layers).reduce((b,k) => {
-                const g = geojson([x, y, z], layers[k]);
-                layer.addData(g);
-            }, []);
-        });                        
+            const features = Object.keys(layers).reduce((a, k) => {
+                geojson([x, y, z], layers[k])
+                .forEach(feature => {
+                    const {properties: {uid}} = feature;
+                    a[uid] = feature;                    
+                });                
+                return a;
+            }, {});
+
+            Object.keys(tiles.cache)
+            .filter(uid => !features[uid])            
+            .forEach(uid => {
+                const item = tiles.cache[uid];
+                tiles.layer.removeLayer(item);
+                delete tiles.cache[uid];
+            });
+            Object.keys(features)
+            .forEach(uid => {
+                if (!tiles.cache[uid]) {
+                    tiles.cache[uid] = tiles.layer.addLayer(L.geoJSON(features[uid]));
+                }
+            });
+        });
     });    
 }
 
-let cache = {};
-
 function geojson([x, y, z], layer) {
-    if (!layer) return;       
+    if (!layer) return;
+    const features = [];
     for (let i = 0; i < layer.length; ++i) {
-        const f = layer.feature(i).toGeoJSON(x, y, z);
-        const {properties: {uid}} = f;
-        cache[uid] = f;
-    }    
+        features.push (layer.feature(i).toGeoJSON(x, y, z));        
+    }
+    return features;
 }
 
 const renderer = L.canvas();
@@ -41,11 +61,15 @@ window.addEventListener('load', async () => {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    const tiles = L.geoJSON();
-    tiles.addTo(map);
 
-    async function tilehandler() { 
-        tiles.clearLayers();               
+    let tiles = {
+        layer: L.layerGroup(),
+        cache: {}
+    };
+    
+    tiles.layer.addTo(map);
+
+    async function tilehandler() {         
         const zoom = map.getZoom();
         const {min, max} = L.CRS.EPSG3857.getProjectedBounds(zoom);        
         await getboxtiles(min.x, min.y, max.x, max.y, tiles);
