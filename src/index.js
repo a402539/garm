@@ -3,6 +3,8 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {VectorTile} from '@mapbox/vector-tile';
 import Protobuf from 'pbf';
+import CanvasLayer from './CanvasLayer.js';
+import CONST from 'worker/const.js'
 
 let abortController = new AbortController();
 let fg;
@@ -82,15 +84,26 @@ function getNormalizeBounds(screenBounds) { // get bounds array from -180 180 ln
 
     if (w >= 180) {
         minX = -180; maxX = 180;
-    } else if (maxX > 180 || minX < -180) {
+    }
+    else if (maxX > 180 || minX < -180) {
         let center = ((maxX + minX) / 2) % 360;
-        if (center > 180) { center -= 360; }
-        else if (center < -180) { center += 360; }
-        minX = center - w; maxX = center + w;
+        if (center > 180) {
+            center -= 360;
+        }
+        else if (center < -180) {
+            center += 360;
+        }
+        minX = center - w;
+        maxX = center + w;
         if (minX < -180) {
-            minX1 = minX + 360; maxX1 = 180; minX = -180;
-        } else if (maxX > 180) {
-            minX1 = -180; maxX1 = maxX - 360; maxX = 180;
+            minX1 = minX + 360;
+            maxX1 = 180;
+            minX = -180;
+        }
+        else if (maxX > 180) {
+            minX1 = -180;
+            maxX1 = maxX - 360;
+            maxX = 180;
         }
     }
     let m1 = L.Projection.Mercator.project(L.latLng([southEast.lat, minX]));
@@ -123,24 +136,79 @@ window.addEventListener('load', async () => {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
+    const dataManager = new Worker("dataManager.js");
 
-    let tiles = {
-        layer: L.layerGroup(),
-        cache: {}
+    
+    const dateEnd = Math.floor(Date.now() / 1000);
+    const testLayer = new CanvasLayer({
+        dateBegin: dateEnd - 24 * 60 * 60,
+        dateEnd,
+        dataManager,
+        layerId: '8EE2C7996800458AAF70BABB43321FA4'
+        // layerId: 'F5CAD73AF25D46D2B3977847AEE33293'
+    });
+    const layersByID = {
+        '8EE2C7996800458AAF70BABB43321FA4': testLayer
+        // 'F5CAD73AF25D46D2B3977847AEE33293': testLayer
     };
-    
-    tiles.layer.addTo(map);
 
-    async function tilehandler() {         
-        const bb = map.getBounds();
-        const arrBbox = getNormalizeBounds(bb);
-        console.log('ggg', arrBbox);
-       // const {min, max} = L.CRS.EPSG3857.getProjectedBounds(zoom);        
-        await getboxtiles(arrBbox[0][0], arrBbox[0][1], arrBbox[0][2], arrBbox[0][3], tiles);
-    }
+    testLayer.addTo(map);
 
-    map.on('moveend', tilehandler);
-    map.on('zoomend', tilehandler);
+    const moveend = () => {
+		const zoom = map.getZoom();
+		// const scale = map.scale(zoom);
+		dataManager.postMessage({
+			cmd: 'moveend',
+			zoom,
+			// scale: L.CRS.EPSG3857.scale(zoom),
+			scale: 256 / (CONST.WORLDWIDTHFULL / Math.pow(2, zoom)),
+			bbox: getNormalizeBounds(map.getBounds())
+		});
+	}; 
+
+	dataManager.onmessage = msg => {
+		 // console.log('Main dataManager', msg.data);
+		const data = msg.data || {};
+		const {cmd, layerId, tileKey} = data;
+		switch(cmd) {
+			case 'rendered':
+				if (data.bitmap) {
+					layersByID[layerId].rendered(data.bitmap);
+				}
+                // else {
+				// 	var oGrayImg = new Image();
+                //     oGrayImg.src = data.it;
+                //     document.body.appendChild(oGrayImg);
+				// }
+				break;
+			case 'render':
+				layersByID[layerId].tileReady(tileKey);
+				break;
+			case 'chkVersion':
+				break;
+			default:
+				console.warn('Warning: Bad message from worker ', data);
+				break;
+		}
+
+	};
+ 	moveend();
+
+    // let tiles = {
+    //     layer: L.layerGroup(),
+    //     cache: {}
+    // };
     
-    await tilehandler();
+    // tiles.layer.addTo(map);
+
+    // async function tilehandler() {         
+    //     const bb = map.getBounds();
+    //     const arrBbox = getNormalizeBounds(bb);              
+    //     await getboxtiles(arrBbox[0][0], arrBbox[0][1], arrBbox[0][2], arrBbox[0][3], tiles);
+    // }
+
+    // map.on('moveend', tilehandler);
+    // map.on('zoomend', tilehandler);
+    
+    // await tilehandler();
 });

@@ -34,5 +34,29 @@ export default [
                 include: ['src/**']
             }),
         ],
-    },          
+    }, 
+    {
+        input: 'src/worker/dataManager.js',
+        output: { 
+            file: 'wwwroot/dataManager.js',
+            format: 'iife',
+            sourcemap: true,
+            name: 'DataManager',
+            globals: {
+                'leaflet': 'L',
+            },
+        },
+        plugins: [                      
+            resolve({                
+                moduleDirectories: ['node_modules', 'src']
+            }),
+            commonjs(),            
+            json(),            
+            babel({                
+                extensions: ['.js', '.mjs'],
+                exclude: ['node_modules/@babel/**', 'node_modules/core-js/**'],
+                include: ['src/**']
+            }),
+        ],
+    },       
 ];
