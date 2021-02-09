@@ -165,6 +165,7 @@ window.addEventListener('load', async () => {
 			bbox: getNormalizeBounds(map.getBounds())
 		});
 	}; 
+	map.on('moveend', moveend);
 
 	dataManager.onmessage = msg => {
 		 // console.log('Main dataManager', msg.data);
