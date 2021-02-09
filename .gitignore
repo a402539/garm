@@ -106,3 +106,4 @@ bin
 obj
 appsettings.*
 wwwroot/main.*
+wwwroot/dataManager.*
