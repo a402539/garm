@@ -2,6 +2,8 @@ import CONST from './const.js';
 import Request from './Request.js';
 import load_tiles from './TilesLoader.js';
 import Renderer from './renderer2d.js';
+import {VectorTile} from '@mapbox/vector-tile';
+import Protobuf from 'pbf';
 
 const hosts = {};
 let bbox = null;
@@ -136,7 +138,49 @@ const utils = {
 	},
 };
 
-const chkVersion = () => {
+let abortController = new AbortController();
+
+async function getTiles () {
+	abortController.abort();
+    abortController = new AbortController();
+	const [xmin, ymin, xmax, ymax] = bbox[0];
+    const response = await fetch(`/box/${xmin.toFixed(6)},${ymin.toFixed(6)},${xmax.toFixed(6)},${ymax.toFixed(6)}`, { signal: abortController.signal });
+    const items = await response.json();
+	items.forEach(({x, y, z}) => {
+        fetch(`/tile/${z}/${x}/${y}`)
+        .then(res => res.blob())
+        .then(blob => blob.arrayBuffer())
+        .then(buf => {
+            const {layers} = new VectorTile(new Protobuf(buf));
+            const features = Object.keys(layers).reduce((a, k) => {
+                geojson([x, y, z], layers[k])
+                .forEach(feature => {
+                   // console.log('hhh', feature);
+                    const {properties: {uid}} = feature;
+                    a[uid] = feature;                    
+                });                
+                return a;
+            }, {}); 
+			// console.log('features:', features);
+        });
+    });
+}
+
+function geojson([x, y, z], layer) {
+    if (!layer) return;
+    const features = [];
+    for (let i = 0; i < layer.length; ++i) {
+        features.push (layer.feature(i).toGeoJSON(x, y, z));        
+    }
+    return features;
+}
+
+const chkVersion = () => {	
+
+	getTiles();
+	
+	return;
+
     // console.log('dataManager chkVersion', hosts);
 	for (let host in hosts) {
 		utils.chkHost(host).then((json) => {
