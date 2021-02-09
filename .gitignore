@@ -105,3 +105,4 @@ dist
 bin
 obj
 appsettings.*
+wwwroot/main.*
