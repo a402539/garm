@@ -10,6 +10,7 @@ let bbox = null;
 let zoom = 3;
 let scale = 1;
 let screen;
+let origin;
 
 let intervalID;
 let timeoutID;
@@ -151,8 +152,7 @@ async function getTiles () {
 	const canvas = screen.canvas;
 	const ctx = canvas.getContext("2d");
 	ctx.resetTransform();
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	ctx.transform(scale, 0, 0, -scale, -bbox[0][0] * scale, bbox[0][3] * scale);
+	ctx.clearRect(0, 0, canvas.width, canvas.height);	
 	screen.scale = scale;
 	let bounds = Request.bounds(bbox[0]);
 
@@ -161,37 +161,53 @@ async function getTiles () {
 			return fetch(`/tile/${z}/${x}/${y}`)
 			.then(res => res.blob())
 			.then(blob => blob.arrayBuffer())
-			.then(buf => {
-				const {layers} = new VectorTile(new Protobuf(buf));
-				const features = Object.keys(layers).reduce((a, k) => {
-					geojson([x, y, z], layers[k])
-					.forEach(feature => {
-					// console.log('hhh', feature);
-						const {properties: {uid}} = feature;
-						a[uid] = feature;
-				//		if (feature.geometry.type === "Polygon") {
-				//			Renderer.render2dRing(screen, feature.geometry.coordinates[0]);
-				//		}
-					});
-					return a;
-				}, {}); 
-				return features;
+			.then(buf => {				
+				const pbf = new Protobuf(buf);				
+				const vt = new VectorTile(pbf);
+				const t = {};
+				const layers = vt.layers;				
+				Object.keys(layers).forEach(k => {
+					const layer = layers[k];					
+					t[k] = { features: [], x, y, z, extent: layer.extent };
+					for (let i = 0; i < layer.length; ++i) {
+						const vf = layer.feature(i);							
+						const coordinates = vf.loadGeometry();						
+						t[k].features.push({type: vf.type, coordinates});							
+					}					
+				});				
+				return t;
+				// const features = Object.keys(layers).reduce((a, k) => {
+				// 	geojson([x, y, z], layers[k])
+				// 	.forEach(feature => {
+				// 	// console.log('hhh', feature);
+				// 		const {properties: {uid}} = feature;
+				// 		a[uid] = feature;
+				// //		if (feature.geometry.type === "Polygon") {
+				// //			Renderer.render2dRing(screen, feature.geometry.coordinates[0]);
+				// //		}
+				// 	});
+				// 	return a;
+				// }, {}); 
+				// return features;
 				// console.log('features:', features);
 			});
 		})
-	).then(res => {
-		Object.values(res[0]).forEach(feature => {
-			if (feature.geometry.type === "Polygon") {
-				const ring = ringToMerc(feature.geometry.coordinates[0]);
-				const bRing = Request.bounds(ring);
-				if (bounds.intersects(bRing)) {
-					Renderer.render2dRing(screen, ring);
-
-				}
-			}
-		});
-		bitmapToMain(screen.id, screen.canvas);
-
+	)
+	.then(results => {		
+		results.forEach(layers => {
+			Object.keys(layers).forEach(k => {
+				const {features, x, y, z, extent} = layers[k];
+				console.log('offsetx:', x * Math.pow(2, z + 8) - origin.x);
+				console.log('offsety:', y * Math.pow(2, z + 8) - origin.y);
+				// ctx.transform(scale, 0, 0, -scale, -bbox[0][0] * scale, bbox[0][3] * scale);
+				// features.forEach(feature => {
+				// 	if (feature.type === 3) {															
+				// 		Renderer.render2dpbf(screen, feature.coordinates);
+				// 	}
+				// });
+				// bitmapToMain(screen.id, screen.canvas);
+			});						
+		});		
 	});
 }
 
@@ -434,6 +450,7 @@ onmessage = function(evt) {
 			zoom = data.zoom;
 			scale = data.scale;
 			bbox = data.bbox;
+			origin = data.origin;
 			redrawScreen(true);
 			break;
 		default:

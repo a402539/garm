@@ -29,28 +29,29 @@ async function getboxtiles(xmin, ymin, xmax, ymax, tiles) {
         .then(blob => blob.arrayBuffer())
         .then(buf => {
             const {layers} = new VectorTile(new Protobuf(buf));
-            const features = Object.keys(layers).reduce((a, k) => {
-                geojson([x, y, z], layers[k])
-                .forEach(feature => {
-                   // console.log('hhh', feature);
-                    const {properties: {uid}} = feature;
-                    a[uid] = feature;                    
-                });                
-                return a;
-            }, {});
-             Object.keys(tiles.cache)
-            .filter(uid => !features[uid])            
-            .forEach(uid => {
-                const item = tiles.cache[uid];
-                tiles.layer.removeLayer(item);
-                delete tiles.cache[uid];
-            });
-            Object.keys(features)
-            .forEach(uid => {
-                if (!tiles.cache[uid]) {
-                    tiles.cache[uid] = tiles.layer.addLayer(L.geoJSON(features[uid]));
-                }
-            }); 
+            console.log(layers);
+            // const features = Object.keys(layers).reduce((a, k) => {
+            //     geojson([x, y, z], layers[k])
+            //     .forEach(feature => {
+            //        // console.log('hhh', feature);
+            //         const {properties: {uid}} = feature;
+            //         a[uid] = feature;                    
+            //     });                
+            //     return a;
+            // }, {});
+            //  Object.keys(tiles.cache)
+            // .filter(uid => !features[uid])            
+            // .forEach(uid => {
+            //     const item = tiles.cache[uid];
+            //     tiles.layer.removeLayer(item);
+            //     delete tiles.cache[uid];
+            // });
+            // Object.keys(features)
+            // .forEach(uid => {
+            //     if (!tiles.cache[uid]) {
+            //         tiles.cache[uid] = tiles.layer.addLayer(L.geoJSON(features[uid]));
+            //     }
+            // }); 
         });
     }); 
 }
@@ -73,6 +74,7 @@ function drawTileNums(arr) {
     }
     return L.featureGroup(out);
 }
+
 function getNormalizeBounds(screenBounds) { // get bounds array from -180 180 lng
     const northWest = screenBounds.getNorthWest();
     const southEast = screenBounds.getSouthEast();
@@ -162,7 +164,8 @@ window.addEventListener('load', async () => {
 			zoom,
 			// scale: L.CRS.EPSG3857.scale(zoom),
 			scale: 256 / (CONST.WORLDWIDTHFULL / Math.pow(2, zoom)),
-			bbox: getNormalizeBounds(map.getBounds())
+			bbox: getNormalizeBounds(map.getBounds()),
+            origin: map.getPixelOrigin(),
 		});
 	}; 
 	map.on('moveend', moveend);

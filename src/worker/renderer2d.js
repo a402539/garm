@@ -1,4 +1,4 @@
-export default {
+export default {	
 	render2d: (options, coords) => {
 		const {scale, canvas} = options;        
 		const ctx = canvas.getContext("2d");
@@ -27,6 +27,27 @@ export default {
 			}
 			else {
 				ctx.moveTo(coord[0], coord[1]);
+			}
+		});
+		//ctx.fill();
+		ctx.stroke();
+// console.log('coords', coords);
+		return true;
+	},
+	render2dpbf: (options, coordinates) => {
+		const {scale, canvas} = options;        
+		const ctx = canvas.getContext("2d");
+		ctx.beginPath();
+		ctx.lineWidth = 1 / scale;
+		ctx.strokeStyle = 'red';
+		ctx.fillStyle = 'blue';
+		//ctx.globalAlpha = 0.5;
+		coordinates.forEach((p, i) => {
+			if (i) {
+				ctx.lineTo(p.x, p.y);
+			}
+			else {
+				ctx.moveTo(p.x, p.y);
 			}
 		});
 		//ctx.fill();
@@ -66,5 +87,5 @@ export default {
 		}
 		requestAnimationFrame(render);
 		return true;
-	}
+	},	
 };
