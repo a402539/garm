@@ -13,6 +13,27 @@ export default {
 		ctx.fill();
 		return true;
 	},
+	render2dRing: (options, ring) => {
+		const {scale, canvas} = options;        
+		const ctx = canvas.getContext("2d");
+		ctx.beginPath();
+		ctx.lineWidth = 1 / scale;
+		ctx.strokeStyle = 'red';
+		ctx.fillStyle = 'blue';
+		//ctx.globalAlpha = 0.5;
+		ring.forEach((coord, i) => {
+			if (i) {
+				ctx.lineTo(coord[0], coord[1]);
+			}
+			else {
+				ctx.moveTo(coord[0], coord[1]);
+			}
+		});
+		//ctx.fill();
+		ctx.stroke();
+// console.log('coords', coords);
+		return true;
+	},
 	render2dEmpty: (options) => {
 		const {coords, canvas} = options;        
 		// const gl = canvas.getContext("webgl");

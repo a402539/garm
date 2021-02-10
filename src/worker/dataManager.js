@@ -9,6 +9,7 @@ const hosts = {};
 let bbox = null;
 let zoom = 3;
 let scale = 1;
+let screen;
 
 let intervalID;
 let timeoutID;
@@ -145,25 +146,68 @@ async function getTiles () {
     abortController = new AbortController();
 	const [xmin, ymin, xmax, ymax] = bbox[0];
     const response = await fetch(`/box/${xmin.toFixed(6)},${ymin.toFixed(6)},${xmax.toFixed(6)},${ymax.toFixed(6)}`, { signal: abortController.signal });
-    const items = await response.json();
-	items.forEach(({x, y, z}) => {
-        fetch(`/tile/${z}/${x}/${y}`)
-        .then(res => res.blob())
-        .then(blob => blob.arrayBuffer())
-        .then(buf => {
-            const {layers} = new VectorTile(new Protobuf(buf));
-            const features = Object.keys(layers).reduce((a, k) => {
-                geojson([x, y, z], layers[k])
-                .forEach(feature => {
-                   // console.log('hhh', feature);
-                    const {properties: {uid}} = feature;
-                    a[uid] = feature;                    
-                });                
-                return a;
-            }, {}); 
-			// console.log('features:', features);
-        });
-    });
+	const items = await response.json();
+
+	const canvas = screen.canvas;
+	const ctx = canvas.getContext("2d");
+	ctx.resetTransform();
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	ctx.transform(scale, 0, 0, -scale, -bbox[0][0] * scale, bbox[0][3] * scale);
+	screen.scale = scale;
+	let bounds = Request.bounds(bbox[0]);
+
+	Promise.all(
+		items.map(({x, y, z}) => {
+			return fetch(`/tile/${z}/${x}/${y}`)
+			.then(res => res.blob())
+			.then(blob => blob.arrayBuffer())
+			.then(buf => {
+				const {layers} = new VectorTile(new Protobuf(buf));
+				const features = Object.keys(layers).reduce((a, k) => {
+					geojson([x, y, z], layers[k])
+					.forEach(feature => {
+					// console.log('hhh', feature);
+						const {properties: {uid}} = feature;
+						a[uid] = feature;
+				//		if (feature.geometry.type === "Polygon") {
+				//			Renderer.render2dRing(screen, feature.geometry.coordinates[0]);
+				//		}
+					});
+					return a;
+				}, {}); 
+				return features;
+				// console.log('features:', features);
+			});
+		})
+	).then(res => {
+		Object.values(res[0]).forEach(feature => {
+			if (feature.geometry.type === "Polygon") {
+				const ring = ringToMerc(feature.geometry.coordinates[0]);
+				const bRing = Request.bounds(ring);
+				if (bounds.intersects(bRing)) {
+					Renderer.render2dRing(screen, ring);
+
+				}
+			}
+		});
+		bitmapToMain(screen.id, screen.canvas);
+
+	});
+}
+
+const R = 6378137;
+const d = Math.PI / 180;
+const max = 85.0511287798;
+
+function ringToMerc(ring) {
+	return ring.map(coord => {
+		var sin = Math.sin(Math.max(Math.min(max, coord[1]), -max) * d);
+		return [
+			R * coord[0] * d,
+			R * Math.log((1 + sin) / (1 - sin)) / 2
+		];
+
+	})
 }
 
 function geojson([x, y, z], layer) {
@@ -361,6 +405,7 @@ onmessage = function(evt) {
 						canvas: new OffscreenCanvas(data.width, data.height),
 						id: id1,
 					};
+					screen = it.screenAll;
 					redrawScreen(true);
 				}
 			}
