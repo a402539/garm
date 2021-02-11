@@ -14,12 +14,12 @@ export default L.Layer.extend({
 		}
         
 
-		this.options.dataManager.postMessage({
-			cmd: 'addLayer',
-			id: this.options.layerId,
-			dateBegin: this.options.dateBegin,
-			dateEnd: this.options.dateEnd,
-		}, []);
+		// this.options.dataManager.postMessage({
+		// 	cmd: 'addLayer',
+		// 	id: this.options.layerId,
+		// 	dateBegin: this.options.dateBegin,
+		// 	dateEnd: this.options.dateEnd,
+		// }, []);
 
 		this._rePaint();
 	},

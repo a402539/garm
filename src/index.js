@@ -1,79 +1,7 @@
 import './index.css';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import {VectorTile} from '@mapbox/vector-tile';
-import Protobuf from 'pbf';
 import CanvasLayer from './CanvasLayer.js';
-import CONST from 'worker/const.js'
-
-let abortController = new AbortController();
-let fg;
-
-async function getboxtiles(xmin, ymin, xmax, ymax, tiles) {
-    abortController.abort();
-    abortController = new AbortController();
-    const response = await fetch(`/box/${xmin.toFixed(6)},${ymin.toFixed(6)},${xmax.toFixed(6)},${ymax.toFixed(6)}`, { signal: abortController.signal });
-    const items = await response.json();
-   // const items = [{x: 1, y: 0, z: 1}];
-    console.log('ccc', items);
-
-    if (fg && fg._map) {
-        tiles.layer.removeLayer(fg);
-    }
-    fg = drawTileNums(items);
-    tiles.layer.addLayer(fg);
-
-    items.forEach(({x, y, z}) => {
-        fetch(`/tile/${z}/${x}/${y}`)
-        .then(res => res.blob())
-        .then(blob => blob.arrayBuffer())
-        .then(buf => {
-            const {layers} = new VectorTile(new Protobuf(buf));
-            console.log(layers);
-            // const features = Object.keys(layers).reduce((a, k) => {
-            //     geojson([x, y, z], layers[k])
-            //     .forEach(feature => {
-            //        // console.log('hhh', feature);
-            //         const {properties: {uid}} = feature;
-            //         a[uid] = feature;                    
-            //     });                
-            //     return a;
-            // }, {});
-            //  Object.keys(tiles.cache)
-            // .filter(uid => !features[uid])            
-            // .forEach(uid => {
-            //     const item = tiles.cache[uid];
-            //     tiles.layer.removeLayer(item);
-            //     delete tiles.cache[uid];
-            // });
-            // Object.keys(features)
-            // .forEach(uid => {
-            //     if (!tiles.cache[uid]) {
-            //         tiles.cache[uid] = tiles.layer.addLayer(L.geoJSON(features[uid]));
-            //     }
-            // }); 
-        });
-    }); 
-}
-
-const ww = 40075016.685578496;
-const w = ww / 2;
-function drawTileNums(arr) {
-    let out = [];
-    for (let i = 0, len = arr.length; i < len; i++) {
-        let pt = arr[i];
-        let tileSize = ww / Math.pow(2, pt.z);
-        let minx = pt.x * tileSize - w;
-        let miny = w - pt.y * tileSize;
-        
-        let latLngBounds = L.latLngBounds([
-            L.CRS.EPSG3857.unproject({x: minx, y: miny}),
-            L.CRS.EPSG3857.unproject({x: minx + tileSize, y: miny - tileSize})
-        ]);
-        out.push(L.rectangle(latLngBounds, {color: "#ff0000", weight: 1, pointerEvents: 'none'}));
-    }
-    return L.featureGroup(out);
-}
 
 function getNormalizeBounds(screenBounds) { // get bounds array from -180 180 lng
     const northWest = screenBounds.getNorthWest();
@@ -120,39 +48,21 @@ function getNormalizeBounds(screenBounds) { // get bounds array from -180 180 ln
     return out;
 };
 
-function geojson([x, y, z], layer) {
-    if (!layer) return;
-    const features = [];
-    for (let i = 0; i < layer.length; ++i) {
-        features.push (layer.feature(i).toGeoJSON(x, y, z));        
-    }
-    return features;
-}
-
-const renderer = L.canvas();
-
 window.addEventListener('load', async () => {
-    const map = L.map('map', {renderer}).setView([55.45, 37.37], 10);
+    const map = L.map('map', {}).setView([55.45, 37.37], 10);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
     const dataManager = new Worker("dataManager.js");
-
     
     const dateEnd = Math.floor(Date.now() / 1000);
     const testLayer = new CanvasLayer({
-        dateBegin: dateEnd - 24 * 60 * 60,
-        dateEnd,
-        dataManager,
-        layerId: '8EE2C7996800458AAF70BABB43321FA4'
-        // layerId: 'F5CAD73AF25D46D2B3977847AEE33293'
+        // dateBegin: dateEnd - 24 * 60 * 60,
+        // dateEnd,
+        dataManager
     });
-    const layersByID = {
-        '8EE2C7996800458AAF70BABB43321FA4': testLayer
-        // 'F5CAD73AF25D46D2B3977847AEE33293': testLayer
-    };
 
     testLayer.addTo(map);
 
@@ -165,8 +75,6 @@ window.addEventListener('load', async () => {
 		dataManager.postMessage({
 			cmd: 'moveend',
 			zoom,
-			// scale: L.CRS.EPSG3857.scale(zoom),
-			scale: 256 / (CONST.WORLDWIDTHFULL / Math.pow(2, zoom)),
 			bbox: getNormalizeBounds(map.getBounds()),
             pixelBounds: map.getPixelBounds(),
 		});
@@ -180,18 +88,8 @@ window.addEventListener('load', async () => {
 		switch(cmd) {
 			case 'rendered':
 				if (data.bitmap) {
-					layersByID[layerId].rendered(data.bitmap);
+					testLayer.rendered(data.bitmap);
 				}
-                // else {
-				// 	var oGrayImg = new Image();
-                //     oGrayImg.src = data.it;
-                //     document.body.appendChild(oGrayImg);
-				// }
-				break;
-			case 'render':
-				layersByID[layerId].tileReady(tileKey);
-				break;
-			case 'chkVersion':
 				break;
 			default:
 				console.warn('Warning: Bad message from worker ', data);
@@ -200,22 +98,4 @@ window.addEventListener('load', async () => {
 
 	};
  	moveend();
-
-    // let tiles = {
-    //     layer: L.layerGroup(),
-    //     cache: {}
-    // };
-    
-    // tiles.layer.addTo(map);
-
-    // async function tilehandler() {         
-    //     const bb = map.getBounds();
-    //     const arrBbox = getNormalizeBounds(bb);              
-    //     await getboxtiles(arrBbox[0][0], arrBbox[0][1], arrBbox[0][2], arrBbox[0][3], tiles);
-    // }
-
-    // map.on('moveend', tilehandler);
-    // map.on('zoomend', tilehandler);
-    
-    // await tilehandler();
 });
