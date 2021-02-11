@@ -132,7 +132,7 @@ function geojson([x, y, z], layer) {
 const renderer = L.canvas();
 
 window.addEventListener('load', async () => {
-    const map = L.map('map', {renderer}).setView([55.45, 37.37], 10);
+    const map = L.map('map', {renderer}).setView([55.45, 37.37], 4);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -165,7 +165,7 @@ window.addEventListener('load', async () => {
 			// scale: L.CRS.EPSG3857.scale(zoom),
 			scale: 256 / (CONST.WORLDWIDTHFULL / Math.pow(2, zoom)),
 			bbox: getNormalizeBounds(map.getBounds()),
-            origin: map.getPixelOrigin(),
+            pixelBounds: map.getPixelBounds(),
 		});
 	}; 
 	map.on('moveend', moveend);

@@ -34,20 +34,30 @@ export default {
 // console.log('coords', coords);
 		return true;
 	},
-	render2dpbf: (options, coordinates) => {
+	render2dpbf: (options, coordinates, extent, x0, y0, tw) => {
 		const {scale, canvas} = options;        
 		const ctx = canvas.getContext("2d");
 		ctx.beginPath();
-		ctx.lineWidth = 1 / scale;
+		ctx.lineWidth = 1;// / scale;
 		ctx.strokeStyle = 'red';
 		ctx.fillStyle = 'blue';
 		//ctx.globalAlpha = 0.5;
+		ctx.moveTo(x0, y0);
+		ctx.lineTo(x0 + tw, y0);
+		ctx.lineTo(x0 + tw, y0 + tw);
+		ctx.lineTo(x0, y0 + tw);
+		ctx.lineTo(x0, y0);
+		ctx.closePath();
+		ctx.stroke();
+
+		ctx.beginPath();
+		ctx.strokeStyle = 'blue';
 		coordinates.forEach((p, i) => {
 			if (i) {
-				ctx.lineTo(p.x, p.y);
+				ctx.lineTo(x0 + p.x, y0 + p.y);
 			}
 			else {
-				ctx.moveTo(p.x, p.y);
+				ctx.moveTo(x0 + p.x, y0 + p.y);
 			}
 		});
 		//ctx.fill();
