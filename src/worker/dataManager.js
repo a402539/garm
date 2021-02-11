@@ -11,22 +11,12 @@ async function getBoxTiles(signal, bbox) {
 	return response.json();
 }
 
-async function collectTiles (signal, boxes) {	
-	try {
-		const parts = await Promise.all(boxes.map(box => getBoxTiles(signal, box)));
-		return parts.reduce((a,p) => a.concat(p), []);
-	}
-	catch {
-		return [];
-	}
-}
-
 async function getTiles (zoom, bbox, bounds) {	
 	if (abortController) {
 		abortController.abort();
 	}
 	abortController = new AbortController();	
-	const items = await collectTiles(abortController.signal, bbox);	
+	const items = await getBoxTiles(abortController.signal, bbox);	
 
 	const ctx = canvas.getContext("2d");
 	ctx.resetTransform();

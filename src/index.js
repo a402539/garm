@@ -3,51 +3,6 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import CanvasLayer from './CanvasLayer.js';
 
-function getNormalizeBounds(screenBounds) { // get bounds array from -180 180 lng
-    const northWest = screenBounds.getNorthWest();
-    const southEast = screenBounds.getSouthEast();
-    let minX = northWest.lng, maxX = southEast.lng;
-    const w = (maxX - minX) / 2;
-    let minX1 = 0;
-    let maxX1 = 0;
-    const out = [];
-
-    if (w >= 180) {
-        minX = -180; maxX = 180;
-    }
-    else if (maxX > 180 || minX < -180) {
-        let center = ((maxX + minX) / 2) % 360;
-        if (center > 180) {
-            center -= 360;
-        }
-        else if (center < -180) {
-            center += 360;
-        }
-        minX = center - w;
-        maxX = center + w;
-        if (minX < -180) {
-            minX1 = minX + 360;
-            maxX1 = 180;
-            minX = -180;
-        }
-        else if (maxX > 180) {
-            minX1 = -180;
-            maxX1 = maxX - 360;
-            maxX = 180;
-        }
-    }
-    let m1 = L.Projection.Mercator.project(L.latLng([southEast.lat, minX]));
-    let m2 = L.Projection.Mercator.project(L.latLng([northWest.lat, maxX]));
-    out.push([m1.x, m1.y, m2.x, m2.y]);
-
-    if (minX1) {
-        let m11 = L.Projection.Mercator.project(L.latLng([southEast.lat, minX1]));
-        let m12 = L.Projection.Mercator.project(L.latLng([northWest.lat, maxX1]));
-        out.push([m11.x, m11.y, m12.x, m12.y]);
-    }
-    return out;
-};
-
 window.addEventListener('load', async () => {
     const map = L.map('map', {}).setView([55.45, 37.37], 10);
 
@@ -67,11 +22,17 @@ window.addEventListener('load', async () => {
     testLayer.addTo(map);
 
     const moveend = () => {
-		const zoom = map.getZoom();        
+        const zoom = map.getZoom();
+        const sbbox = map.getBounds();
+        const sw = sbbox.getSouthWest();
+        const ne = sbbox.getNorthEast();
+        const m1 = L.Projection.Mercator.project(L.latLng([sw.lat, sw.lng]));
+        const m2 = L.Projection.Mercator.project(L.latLng([ne.lat, ne.lng]));
+    
 		dataManager.postMessage({
 			cmd: 'moveend',
 			zoom,
-			bbox: getNormalizeBounds(map.getBounds()),
+			bbox: [m1.x, m1.y, m2.x, m2.y],
             bounds: map.getPixelBounds(),
 		});
 	}; 
