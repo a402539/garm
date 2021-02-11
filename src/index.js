@@ -168,8 +168,7 @@ window.addEventListener('load', async () => {
 			// scale: L.CRS.EPSG3857.scale(zoom),
 			scale: 256 / (CONST.WORLDWIDTHFULL / Math.pow(2, zoom)),
 			bbox: getNormalizeBounds(map.getBounds()),
-            origin: map.getPixelOrigin(),
-            bounds: pixelBounds,
+            pixelBounds: map.getPixelBounds(),
 		});
 	}; 
 	map.on('moveend', moveend);

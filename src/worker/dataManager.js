@@ -10,7 +10,6 @@ let bbox = null;
 let zoom = 3;
 let scale = 1;
 let screen;
-let origin;
 let pixelBounds;
 
 let intervalID;
@@ -151,6 +150,8 @@ async function getTiles () {
 	const response = await fetch(`/box/${xmin.toFixed(6)},${ymin.toFixed(6)},${xmax.toFixed(6)},${ymax.toFixed(6)}`, { signal: abortController.signal });
 	const items = await response.json();
 
+	// const items = [{x: 0, y: 0, z: 2}, {x: 3, y: 0, z: 2}];
+
 	const canvas = screen.canvas;
 	const ctx = canvas.getContext("2d");
 	ctx.resetTransform();
@@ -173,8 +174,8 @@ async function getTiles () {
 						const vf = layer.feature(i);							
 						const coordinates = vf.loadGeometry();						
 						t[k].features.push({type: vf.type, coordinates});							
-					}					
-				});				
+					}				
+				});			
 				return t;				
 			});
 		})
@@ -182,17 +183,23 @@ async function getTiles () {
 	.then(tiles => {		
 		tiles.forEach(layers => {
 			Object.keys(layers).forEach(k => {
-				const {features, x, y, z, extent} = layers[k];				
-				// console.log('offsetx:', x0 - min.x, 'offsety:', y0 - min.y);
+				const {features, x, y, z, extent} = layers[k];
+				scale = Math.pow(2, zoom - z);
+				const tw = 256 * scale;
+				const x0 = x * tw - pixelBounds.min.x;
+				const y0 = y * tw - pixelBounds.min.y;
+				console.log('offsetx:', x, y, z, extent, x0, y0, tw);
+				//console.log('offsety:', y * Math.pow(2, z + 8) - pixelBounds.min.y);
 				// ctx.transform(scale, 0, 0, -scale, -bbox[0][0] * scale, bbox[0][3] * scale);
-				// features.forEach(feature => {
-				// 	if (feature.type === 3) {															
-				// 		Renderer.render2dpbf(screen, feature.coordinates);
-				// 	}
-				// });
-				// bitmapToMain(screen.id, screen.canvas);
+				//ctx.transform(scale, 0, 0, scale, x0 * scale, y0 * scale);
+				features.forEach(feature => {
+					if (feature.type === 3) {															
+						Renderer.render2dpbf(screen, feature.coordinates[0], tw / extent, x0, y0, tw);
+					}
+				});
 			});						
 		});		
+		bitmapToMain(screen.id, screen.canvas);
 	})
 	.catch(() => {});
 }
@@ -436,8 +443,7 @@ onmessage = function(evt) {
 			zoom = data.zoom;
 			scale = data.scale;
 			bbox = data.bbox;
-			origin = data.origin;
-			pixelBounds = data.bounds;
+			pixelBounds = data.pixelBounds;
 			redrawScreen(true);
 			break;
 		default:
