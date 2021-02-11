@@ -5,16 +5,28 @@ import Protobuf from 'pbf';
 let canvas;
 let abortController;
 
+async function getBoxTiles(signal, bbox) {
+	const [xmin, ymin, xmax, ymax] = bbox;
+	const response = await fetch(`/box/${[xmin,ymin,xmax,ymax].map(v => v.toFixed(6)).join(',')}`, { signal });
+	return response.json();
+}
+
+async function collectTiles (signal, boxes) {	
+	try {
+		const parts = await Promise.all(boxes.map(box => getBoxTiles(signal, box)));
+		return parts.reduce((a,p) => a.concat(p), []);
+	}
+	catch {
+		return [];
+	}
+}
+
 async function getTiles (zoom, bbox, bounds) {	
 	if (abortController) {
 		abortController.abort();
 	}
-	abortController = new AbortController();
-	const [xmin, ymin, xmax, ymax] = bbox[0];
-	const response = await fetch(`/box/${xmin.toFixed(6)},${ymin.toFixed(6)},${xmax.toFixed(6)},${ymax.toFixed(6)}`, { signal: abortController.signal });
-	const items = await response.json();
-
-	// const items = [{x: 0, y: 0, z: 2}, {x: 3, y: 0, z: 2}];
+	abortController = new AbortController();	
+	const items = await collectTiles(abortController.signal, bbox);	
 
 	const ctx = canvas.getContext("2d");
 	ctx.resetTransform();
