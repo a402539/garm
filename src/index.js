@@ -71,7 +71,8 @@ window.addEventListener('load', async () => {
 		dataManager.postMessage({
 			cmd: 'moveend',
 			zoom,
-			bbox: getNormalizeBounds(map.getBounds()),
+			// bbox: getNormalizeBounds(map.getBounds()),
+            bbox: map.getBounds(),
             bounds: map.getPixelBounds(),
 		});
 	}; 
