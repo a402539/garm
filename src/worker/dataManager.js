@@ -1,5 +1,4 @@
 import CONST from './const.js';
-import Request from './Request.js';
 import load_tiles from './TilesLoader.js';
 import Renderer from './renderer2d.js';
 import {VectorTile} from '@mapbox/vector-tile';
@@ -11,134 +10,6 @@ let zoom = 3;
 let scale = 1;
 let screen;
 let pixelBounds;
-
-let intervalID;
-let timeoutID;
-
-const utils = {
-	now: function() {
-		if (timeoutID) { clearTimeout(timeoutID); }
-		timeoutID = setTimeout(chkVersion, 0);
-    },
-
-    stop: function() {
-		// console.log('stop:', intervalID, CONST.DELAY);
-        if (intervalID) { clearInterval(intervalID); }
-        intervalID = null;
-    },
-
-    start: function(msec) {
-		// console.log('start:', intervalID, msec);
-        utils.stop();
-        intervalID = setInterval(chkVersion, msec || CONST.DELAY);
-    },
-	addSource: (attr) => {
-		let id = attr.id || attr.layerId;
-		if (id) {
-			let hostName = attr.hostName || CONST.HOST;
-			if (!hosts[hostName]) {
-				hosts[hostName] = {ids: {}, signals: {}};
-				if (attr.apiKey) {
-					hosts[hostName].apiKeyPromise = Request.getJson({
-						url: '//' + hostName + '/ApiKey.ashx',
-						paramsArr: [Request.COMPARS, {
-							Key: attr.apiKey
-						}]
-					})
-                    .then((json) => {
-						// console.log('/ApiKey.ashx', json);
-						let res = json.res;
-						if (res.Status === 'ok' && res.Result) {
-							hosts[hostName].Key = res.Result.Key;
-							return hosts[hostName].Key;
-						}
-					});
-				}
-
-			}
-			hosts[hostName].ids[id] = attr;
-			if (!intervalID) { utils.start(0); }
-			utils.now();
-		} else {
-			console.warn('Warning: Specify source `id` and `hostName`', attr);
-		}
-    },
-	removeSource: (attr) => {
-		attr = attr || {};
-
-		let id = attr.id;
-		if (id) {
-			let hostName = attr.hostName || CONST.HOST;
-			if (hosts[hostName]) {
-				let pt = hosts[hostName].ids[id];
-	console.log('signals:', pt.signals, pt);
-				if (pt.signals) {
-					Object.values(pt.signals).forEach((it) => {
-						it.abort();
-					});
-				}
-				delete hosts[hostName].ids[id];
-				if (Object.keys(hosts[hostName].ids).length === 0) { delete hosts[hostName]; }
-				if (Object.keys(hosts).length === 0) { utils.stop(); }
-			}
-		} else {
-			console.warn('Warning: Specify layer id and hostName', attr);
-		}
-    },
-    getTileAttributes: function(prop) {
-        let tileAttributeIndexes = {};
-        let tileAttributeTypes = {};
-        if (prop.attributes) {
-            let attrs = prop.attributes,
-                attrTypes = prop.attrTypes || null;
-            if (prop.identityField) { tileAttributeIndexes[prop.identityField] = 0; }
-            for (let a = 0; a < attrs.length; a++) {
-                let key = attrs[a];
-                tileAttributeIndexes[key] = a + 1;
-                tileAttributeTypes[key] = attrTypes ? attrTypes[a] : 'string';
-            }
-        }
-        return {
-            tileAttributeTypes: tileAttributeTypes,
-            tileAttributeIndexes: tileAttributeIndexes
-        };
-    },
-	chkHost: (hostName) => {
-		const hostLayers = hosts[hostName];
-		const ids = hostLayers.ids;
-		const arr = [];
-
-		for (let name in ids) {
-			let pt = ids[name];
-			let	pars = { Name: name, Version: 'v' in pt ? pt.v : -1 };
-			if (pt.dateBegin) {
-				pars.dateBegin = pt.dateBegin;
-			}
-			if (pt.dateEnd) {
-				pars.dateEnd = pt.dateEnd;
-			}
-			arr.push(pars);
-		}
-
-		return Request.getJson({
-			url: '//' + hostName + CONST.SCRIPTS.CheckVersion,
-			options: Request.chkSignal('chkVersion', hostLayers.signals, undefined),
-			paramsArr: [Request.COMPARS, {
-				layers: JSON.stringify(arr),
-				bboxes: JSON.stringify(bbox || [CONST.WORLDBBOX]),
-				// generalizedTiles: false,
-				zoom: zoom
-			}]
-		}).then(json => {
-			delete hostLayers.signals.chkVersion;
-			return json;
-		})
-		.catch(err => {
-			console.error(err);
-			// resolve('');
-		});
-	},
-};
 
 let abortController = new AbortController();
 
@@ -187,21 +58,7 @@ async function getTiles () {
 						t[k].features.push({type: vf.type, path});							
 					}					
 				});				
-				return t;
-				// const features = Object.keys(layers).reduce((a, k) => {
-				// 	geojson([x, y, z], layers[k])
-				// 	.forEach(feature => {
-				// 	// console.log('hhh', feature);
-				// 		const {properties: {uid}} = feature;
-				// 		a[uid] = feature;
-				// //		if (feature.geometry.type === "Polygon") {
-				// //			Renderer.render2dRing(screen, feature.geometry.coordinates[0]);
-				// //		}
-				// 	});
-				// 	return a;
-				// }, {}); 
-				// return features;
-				// console.log('features:', features);
+				return t;				
 			});
 		})
 	)
@@ -209,24 +66,18 @@ async function getTiles () {
 		tiles.forEach(layers => {
 			Object.keys(layers).forEach(k => {
 				const {features, x, y, z, extent} = layers[k];
-				scale = Math.pow(2, zoom - z);
-				const tw = 256 * scale;
+				const s = tw / extent;
+				const tw = 1 << (8 + zoom - z);
 				const x0 = x * tw - pixelBounds.min.x;
 				const y0 = y * tw - pixelBounds.min.y;
-				ctx.resetTransform();
-				const sc = tw / extent;
-				console.log('offsetx:', x, y, z, extent, x0, y0, tw, sc);
-
-				//console.log('offsety:', y * Math.pow(2, z + 8) - pixelBounds.min.y);
-				// ctx.transform(scale, 0, 0, -scale, -bbox[0][0] * scale, bbox[0][3] * scale);
-				ctx.transform(sc, 0, 0, sc, x0, y0);
+				ctx.resetTransform();				
+				ctx.transform(s, 0, 0, s, x0, y0);
 				features.forEach(feature => {
 					if (feature.type === 3) {															
-						Renderer.render2dpbf(screen, feature.path, tw / extent, x0, y0, tw);
-						//Renderer.render2dpbf(screen, feature.coordinates[0], tw / extent, x0, y0, tw);
+						Renderer.render2dpbf(screen, feature.path, s, x0, y0, tw);
 					}
 				});
-			});						
+			});
 		});		
 		bitmapToMain(screen.id, screen.canvas);
 	})
@@ -236,26 +87,6 @@ async function getTiles () {
 const R = 6378137;
 const d = Math.PI / 180;
 const max = 85.0511287798;
-
-function ringToMerc(ring) {
-	return ring.map(coord => {
-		var sin = Math.sin(Math.max(Math.min(max, coord[1]), -max) * d);
-		return [
-			R * coord[0] * d,
-			R * Math.log((1 + sin) / (1 - sin)) / 2
-		];
-
-	})
-}
-
-function geojson([x, y, z], layer) {
-    if (!layer) return;
-    const features = [];
-    for (let i = 0; i < layer.length; ++i) {
-        features.push (layer.feature(i).toGeoJSON(x, y, z));        
-    }
-    return features;
-}
 
 const chkVersion = () => {	
 
