@@ -12,14 +12,15 @@ export default L.Layer.extend({
 			this._canvas.style.zIndex = 1;
 			this._setSize();
 		}
-        
 
-		this.options.dataManager.postMessage({
-			cmd: 'addLayer',
-			id: this.options.layerId,
-			dateBegin: this.options.dateBegin,
-			dateEnd: this.options.dateEnd,
-		}, []);
+		// map.on('resize', this._setSize, this);
+        
+		// this.options.dataManager.postMessage({
+		// 	cmd: 'addLayer',
+		// 	id: this.options.layerId,
+		// 	dateBegin: this.options.dateBegin,
+		// 	dateEnd: this.options.dateEnd,
+		// }, []);
 
 		this._rePaint();
 	},
@@ -27,7 +28,7 @@ export default L.Layer.extend({
 	_rePaint: function () {
 		this.options.dataManager.postMessage({
 			cmd: 'drawScreen',
-			id: this.options.layerId,
+			// id: this.options.layerId,
 			width: this._canvas.width,
 			height: this._canvas.height,
 		});
