@@ -2,12 +2,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 using System;
-using System.Text;
+using System.IO;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Npgsql;
-using NpgsqlTypes;
 using System.Data;
 
 namespace garm
@@ -34,24 +33,39 @@ namespace garm
             int y = int.Parse(m.Groups["y"].Value);
             int z = int.Parse(m.Groups["z"].Value);
 
-            try {
-                await using var conn = new NpgsqlConnection(Configuration.GetConnectionString("Default"));
-                await conn.OpenAsync();
-                
-                await using (var cmd = new NpgsqlCommand("SELECT cat.mvt_ls8_tile(@x, @y, @z)", conn))
-                {
-                    cmd.Parameters.AddWithValue("x", x);
-                    cmd.Parameters.AddWithValue("y", y);
-                    cmd.Parameters.AddWithValue("z", z);
-                    var p = new NpgsqlParameter("mvt", DbType.Binary) { Direction = ParameterDirection.Output };
-                    cmd.Parameters.Add(p);
+            var path = Path.Combine("tiles", z.ToString(), x.ToString());
+            Directory.CreateDirectory(path);
 
-                    await cmd.ExecuteNonQueryAsync();
-                    byte[] mvt = p.Value as byte[];
-                    
+            var file = Path.ChangeExtension(Path.Combine(path, y.ToString()), ".pbf");            
+            
+            try {
+
+                if (File.Exists(file)) {
+                    byte[] mvt = await File.ReadAllBytesAsync(file);
                     context.Response.ContentType = "application/octet-stream";
                     await context.Response.Body.WriteAsync(mvt, 0, mvt.Length);
                 }
+                else {
+                    await using var conn = new NpgsqlConnection(Configuration.GetConnectionString("Default"));
+                    await conn.OpenAsync();
+                    
+                    await using (var cmd = new NpgsqlCommand("SELECT cat.mvt_ls8_tile(@x, @y, @z)", conn))
+                    {
+                        cmd.Parameters.AddWithValue("x", x);
+                        cmd.Parameters.AddWithValue("y", y);
+                        cmd.Parameters.AddWithValue("z", z);
+                        var p = new NpgsqlParameter("mvt", DbType.Binary) { Direction = ParameterDirection.Output };
+                        cmd.Parameters.Add(p);
+
+                        await cmd.ExecuteNonQueryAsync();
+                        byte[] mvt = p.Value as byte[];
+
+                        await File.WriteAllBytesAsync(file, mvt);
+                        
+                        context.Response.ContentType = "application/octet-stream";
+                        await context.Response.Body.WriteAsync(mvt, 0, mvt.Length);
+                    }
+                }                         
             }
             catch (Exception e) {
                 _logger.LogError(e.ToString());

@@ -11,6 +11,7 @@ let zoom = 3;
 let scale = 1;
 let screen;
 let origin;
+let pixelBounds;
 
 let intervalID;
 let timeoutID;
@@ -143,10 +144,11 @@ const utils = {
 let abortController = new AbortController();
 
 async function getTiles () {
+	
 	abortController.abort();
-    abortController = new AbortController();
+	abortController = new AbortController();
 	const [xmin, ymin, xmax, ymax] = bbox[0];
-    const response = await fetch(`/box/${xmin.toFixed(6)},${ymin.toFixed(6)},${xmax.toFixed(6)},${ymax.toFixed(6)}`, { signal: abortController.signal });
+	const response = await fetch(`/box/${xmin.toFixed(6)},${ymin.toFixed(6)},${xmax.toFixed(6)},${ymax.toFixed(6)}`, { signal: abortController.signal });
 	const items = await response.json();
 
 	const canvas = screen.canvas;
@@ -154,7 +156,7 @@ async function getTiles () {
 	ctx.resetTransform();
 	ctx.clearRect(0, 0, canvas.width, canvas.height);	
 	screen.scale = scale;
-	let bounds = Request.bounds(bbox[0]);
+	// let bounds = Request.bounds(bbox[0]);
 
 	Promise.all(
 		items.map(({x, y, z}) => {
@@ -162,12 +164,10 @@ async function getTiles () {
 			.then(res => res.blob())
 			.then(blob => blob.arrayBuffer())
 			.then(buf => {				
-				const pbf = new Protobuf(buf);				
-				const vt = new VectorTile(pbf);
 				const t = {};
-				const layers = vt.layers;				
+				const {layers} = new VectorTile(new Protobuf(buf));								
 				Object.keys(layers).forEach(k => {
-					const layer = layers[k];					
+					const layer = layers[k];
 					t[k] = { features: [], x, y, z, extent: layer.extent };
 					for (let i = 0; i < layer.length; ++i) {
 						const vf = layer.feature(i);							
@@ -175,30 +175,15 @@ async function getTiles () {
 						t[k].features.push({type: vf.type, coordinates});							
 					}					
 				});				
-				return t;
-				// const features = Object.keys(layers).reduce((a, k) => {
-				// 	geojson([x, y, z], layers[k])
-				// 	.forEach(feature => {
-				// 	// console.log('hhh', feature);
-				// 		const {properties: {uid}} = feature;
-				// 		a[uid] = feature;
-				// //		if (feature.geometry.type === "Polygon") {
-				// //			Renderer.render2dRing(screen, feature.geometry.coordinates[0]);
-				// //		}
-				// 	});
-				// 	return a;
-				// }, {}); 
-				// return features;
-				// console.log('features:', features);
+				return t;				
 			});
 		})
 	)
-	.then(results => {		
-		results.forEach(layers => {
+	.then(tiles => {		
+		tiles.forEach(layers => {
 			Object.keys(layers).forEach(k => {
-				const {features, x, y, z, extent} = layers[k];
-				console.log('offsetx:', x * Math.pow(2, z + 8) - origin.x);
-				console.log('offsety:', y * Math.pow(2, z + 8) - origin.y);
+				const {features, x, y, z, extent} = layers[k];				
+				// console.log('offsetx:', x0 - min.x, 'offsety:', y0 - min.y);
 				// ctx.transform(scale, 0, 0, -scale, -bbox[0][0] * scale, bbox[0][3] * scale);
 				// features.forEach(feature => {
 				// 	if (feature.type === 3) {															
@@ -208,7 +193,8 @@ async function getTiles () {
 				// bitmapToMain(screen.id, screen.canvas);
 			});						
 		});		
-	});
+	})
+	.catch(() => {});
 }
 
 const R = 6378137;
@@ -446,11 +432,12 @@ onmessage = function(evt) {
 			}
 			break;
 		case 'moveend':
-			console.log('moveend', data);
+			// console.log('moveend', data);
 			zoom = data.zoom;
 			scale = data.scale;
 			bbox = data.bbox;
 			origin = data.origin;
+			pixelBounds = data.bounds;
 			redrawScreen(true);
 			break;
 		default:

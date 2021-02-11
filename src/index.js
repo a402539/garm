@@ -158,6 +158,9 @@ window.addEventListener('load', async () => {
 
     const moveend = () => {
 		const zoom = map.getZoom();
+        const pixelBounds = map.getPixelBounds();
+        const {min, max} = pixelBounds;
+        console.log('zoom:', zoom, 'bounds:[', min.x, ',', min.y, '][', max.x, ',', max.y, ']');        
 		// const scale = map.scale(zoom);
 		dataManager.postMessage({
 			cmd: 'moveend',
@@ -166,6 +169,7 @@ window.addEventListener('load', async () => {
 			scale: 256 / (CONST.WORLDWIDTHFULL / Math.pow(2, zoom)),
 			bbox: getNormalizeBounds(map.getBounds()),
             origin: map.getPixelOrigin(),
+            bounds: pixelBounds,
 		});
 	}; 
 	map.on('moveend', moveend);

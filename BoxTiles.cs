@@ -7,10 +7,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Npgsql;
-using NpgsqlTypes;
-using System.Data;
 using System.Globalization;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace garm
