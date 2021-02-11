@@ -208,7 +208,7 @@ async function getTiles () {
 				//ctx.transform(scale, 0, 0, scale, x0 * scale, y0 * scale);
 				features.forEach(feature => {
 					if (feature.type === 3) {															
-						Renderer.render2dpbf(screen, feature.coordinates[0], extent, x0, y0, tw);
+						Renderer.render2dpbf(screen, feature.coordinates[0], tw / extent, x0, y0, tw);
 					}
 				});
 				bitmapToMain(screen.id, screen.canvas);

@@ -34,7 +34,7 @@ export default {
 // console.log('coords', coords);
 		return true;
 	},
-	render2dpbf: (options, coordinates, extent, x0, y0, tw) => {
+	render2dpbf: (options, coordinates, sc, x0, y0, tw) => {
 		const {scale, canvas} = options;        
 		const ctx = canvas.getContext("2d");
 		ctx.beginPath();
@@ -53,11 +53,14 @@ export default {
 		ctx.beginPath();
 		ctx.strokeStyle = 'blue';
 		coordinates.forEach((p, i) => {
+			if (p.x < 0) {
+				//console.log('rrrrrrr', p)
+			}
 			if (i) {
-				ctx.lineTo(x0 + p.x, y0 + p.y);
+					ctx.lineTo(x0 + p.x * sc, y0 + p.y * sc);
 			}
 			else {
-				ctx.moveTo(x0 + p.x, y0 + p.y);
+				ctx.moveTo(x0 + p.x * sc, y0 + p.y * sc);
 			}
 		});
 		//ctx.fill();
