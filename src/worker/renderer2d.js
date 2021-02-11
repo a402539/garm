@@ -42,27 +42,35 @@ export default {
 		ctx.strokeStyle = 'red';
 		ctx.fillStyle = 'blue';
 		//ctx.globalAlpha = 0.5;
-		ctx.moveTo(x0, y0);
-		ctx.lineTo(x0 + tw, y0);
-		ctx.lineTo(x0 + tw, y0 + tw);
-		ctx.lineTo(x0, y0 + tw);
-		ctx.lineTo(x0, y0);
-		ctx.closePath();
-		ctx.stroke();
+		// ctx.moveTo(x0, y0);
+		// ctx.lineTo(x0 + tw, y0);
+		// ctx.lineTo(x0 + tw, y0 + tw);
+		// ctx.lineTo(x0, y0 + tw);
+		// ctx.lineTo(x0, y0);
+		// ctx.closePath();
+		// ctx.stroke();
 
 		ctx.beginPath();
 		ctx.strokeStyle = 'blue';
+		ctx.stroke(coordinates);
+		/*
 		coordinates.forEach((p, i) => {
 			if (p.x < 0) {
 				//console.log('rrrrrrr', p)
 			}
+			// if (i) {
+			// 		ctx.lineTo(x0 + p.x * sc, y0 + p.y * sc);
+			// }
+			// else {
+			// 	ctx.moveTo(x0 + p.x * sc, y0 + p.y * sc);
+			// }
 			if (i) {
-					ctx.lineTo(x0 + p.x * sc, y0 + p.y * sc);
+				ctx.lineTo(p.x, p.y);
 			}
 			else {
-				ctx.moveTo(x0 + p.x * sc, y0 + p.y * sc);
+				ctx.moveTo(p.x, p.y);
 			}
-		});
+	});*/
 		//ctx.fill();
 		ctx.stroke();
 // console.log('coords', coords);
