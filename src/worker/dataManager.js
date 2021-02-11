@@ -146,9 +146,9 @@ async function getTiles () {
 	abortController.abort();
     abortController = new AbortController();
 	const [xmin, ymin, xmax, ymax] = bbox[0];
-   // const response = await fetch(`/box/${xmin.toFixed(6)},${ymin.toFixed(6)},${xmax.toFixed(6)},${ymax.toFixed(6)}`, { signal: abortController.signal });
-	//const items = await response.json();
-	const items = [{x: 9,  y: 5,  z: 4}];
+    const response = await fetch(`/box/${xmin.toFixed(6)},${ymin.toFixed(6)},${xmax.toFixed(6)},${ymax.toFixed(6)}`, { signal: abortController.signal });
+	const items = await response.json();
+	//const items = [{x: 9,  y: 5,  z: 4}];
 
 	const canvas = screen.canvas;
 	const ctx = canvas.getContext("2d");
@@ -211,9 +211,9 @@ async function getTiles () {
 						Renderer.render2dpbf(screen, feature.coordinates[0], tw / extent, x0, y0, tw);
 					}
 				});
-				bitmapToMain(screen.id, screen.canvas);
 			});						
 		});		
+		bitmapToMain(screen.id, screen.canvas);
 	});
 }
 

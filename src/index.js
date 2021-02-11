@@ -132,7 +132,7 @@ function geojson([x, y, z], layer) {
 const renderer = L.canvas();
 
 window.addEventListener('load', async () => {
-    const map = L.map('map', {renderer}).setView([55.45, 37.37], 4);
+    const map = L.map('map', {renderer}).setView([55.45, 37.37], 10);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
