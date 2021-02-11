@@ -172,8 +172,19 @@ async function getTiles () {
 					t[k] = { features: [], x, y, z, extent: layer.extent };
 					for (let i = 0; i < layer.length; ++i) {
 						const vf = layer.feature(i);							
-						const coordinates = vf.loadGeometry();						
-						t[k].features.push({type: vf.type, coordinates});							
+						const coordinates = vf.loadGeometry();
+						const path = new Path2D();
+						coordinates[0].forEach((p, i) => {
+							if (i) {
+								path.lineTo(p.x, p.y);
+							}
+							else {
+								path.moveTo(p.x, p.y);
+							}
+				
+
+						});
+						t[k].features.push({type: vf.type, path});							
 					}					
 				});				
 				return t;
@@ -202,13 +213,17 @@ async function getTiles () {
 				const tw = 256 * scale;
 				const x0 = x * tw - pixelBounds.min.x;
 				const y0 = y * tw - pixelBounds.min.y;
-				console.log('offsetx:', x, y, z, extent, x0, y0, tw);
+				ctx.resetTransform();
+				const sc = tw / extent;
+				console.log('offsetx:', x, y, z, extent, x0, y0, tw, sc);
+
 				//console.log('offsety:', y * Math.pow(2, z + 8) - pixelBounds.min.y);
 				// ctx.transform(scale, 0, 0, -scale, -bbox[0][0] * scale, bbox[0][3] * scale);
-				//ctx.transform(scale, 0, 0, scale, x0 * scale, y0 * scale);
+				ctx.transform(sc, 0, 0, sc, x0, y0);
 				features.forEach(feature => {
 					if (feature.type === 3) {															
-						Renderer.render2dpbf(screen, feature.coordinates[0], tw / extent, x0, y0, tw);
+						Renderer.render2dpbf(screen, feature.path, tw / extent, x0, y0, tw);
+						//Renderer.render2dpbf(screen, feature.coordinates[0], tw / extent, x0, y0, tw);
 					}
 				});
 			});						
