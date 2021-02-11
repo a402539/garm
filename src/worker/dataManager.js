@@ -16,16 +16,6 @@ async function getBoxTiles(signal, bbox) {
 	return response.json();
 }
 
-// async function collectTiles (signal, boxes) {	
-// 	try {
-// 		const parts = await Promise.all(boxes.map(box => getBoxTiles(signal, box)));
-// 		return parts.reduce((a,p) => a.concat(p), []);
-// 	}
-// 	catch {
-// 		return [];
-// 	}
-// }
-
 async function getTiles (zoom, bbox, bounds) {	
 	if (abortController) {
 		abortController.abort();
@@ -77,8 +67,7 @@ async function getTiles (zoom, bbox, bounds) {
 				const x0 = x * tw - bounds.min.x;
 				const y0 = y * tw - bounds.min.y;
 				ctx.resetTransform();
-				const sc = tw / extent;
-				// console.log('offsetx:', x, y, z, extent, x0, y0, tw, sc);
+				const sc = tw / extent;				
 				ctx.transform(sc, 0, 0, sc, x0, y0);
 				features.forEach(feature => {
 					if (feature.type === 3) {															
