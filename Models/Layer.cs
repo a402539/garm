@@ -12,6 +12,7 @@ namespace garm.Models {
         public Guid Id { get; set; }
         DateTime Created { get; set; }
         public string Name { get; set; }
+        public bool Visible { get; set; }
         public virtual ICollection<Map> Maps { get; set; }
     }
 }

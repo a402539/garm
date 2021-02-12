@@ -1,22 +1,24 @@
-import Renderer from './renderer2d.js';
+import Renderer from './renderer.js';
 import {VectorTile} from '@mapbox/vector-tile';
 import Protobuf from 'pbf';
 
 let canvas;
 let abortController;
+let visibleLayers = {};
 
 async function getBoxTiles(signal, bbox) {
 	const [xmin, ymin, xmax, ymax] = bbox;
-	const response = await fetch(`/box/${[xmin,ymin,xmax,ymax].map(v => v.toFixed(6)).join(',')}`, { signal });
+	const ids = Object.keys(visibleLayers).join(',');
+	const response = await fetch(`/box/${layerId}/${[xmin,ymin,xmax,ymax].map(v => v.toFixed(6)).join(',')}`, { signal });
 	return response.json();
 }
 
-async function getTiles (zoom, bbox, bounds) {	
+async function getTiles (layerId, zoom, bbox, bounds) {	
 	if (abortController) {
 		abortController.abort();
 	}
 	abortController = new AbortController();	
-	const items = await getBoxTiles(abortController.signal, bbox);	
+	const items = await getBoxTiles(layerId, abortController.signal, bbox);	
 
 	const ctx = canvas.getContext("2d");
 	ctx.resetTransform();
@@ -24,7 +26,7 @@ async function getTiles (zoom, bbox, bounds) {
 
 	Promise.all(
 		items.map(({x, y, z}) => {
-			return fetch(`/tile/${z}/${x}/${y}`)
+			return fetch(`/tile/${layerId}/${z}/${x}/${y}`)
 			.then(res => res.blob())
 			.then(blob => blob.arrayBuffer())
 			.then(buf => {				
@@ -67,7 +69,7 @@ async function getTiles (zoom, bbox, bounds) {
 				ctx.transform(sc, 0, 0, sc, x0, y0);
 				features.forEach(feature => {
 					if (feature.type === 3) {															
-						Renderer.render2dpbf(ctx, feature.path);
+						Renderer.renderPath(ctx, feature.path);
 					}
 				});
 			});
@@ -89,8 +91,14 @@ addEventListener('tilesLoaded', getTiles);
 
 onmessage = function(evt) {    
 	const data = evt.data || {};
-	const {cmd, zoom, bbox, bounds, width, height} = data;	
+	const {cmd, layerId, zoom, bbox, bounds, width, height} = data;
 	switch(cmd) {
+		case 'addLayer':
+			visibleLayers[layerId] = true;
+			break;
+		case 'removeLayer':
+			delete visibleLayers[layerId];
+			break;
 		case 'drawScreen':
 			canvas = new OffscreenCanvas(width, height);
 			break;

@@ -15,20 +15,20 @@ export default L.Layer.extend({
 
 		// map.on('resize', this._setSize, this);
         
-		// this.options.dataManager.postMessage({
-		// 	cmd: 'addLayer',
-		// 	id: this.options.layerId,
-		// 	dateBegin: this.options.dateBegin,
-		// 	dateEnd: this.options.dateEnd,
-		// }, []);
+		this.options.dataManager.postMessage({
+			cmd: 'addLayer',
+			layerId: this.options.layerId,
+			dateBegin: this.options.dateBegin,
+			dateEnd: this.options.dateEnd,
+		});
 
-		this._rePaint();
+		this._repaint();
 	},
 
-	_rePaint: function () {
+	_repaint: function () {
 		this.options.dataManager.postMessage({
 			cmd: 'drawScreen',
-			// id: this.options.layerId,
+			layerId: this.options.layerId,
 			width: this._canvas.width,
 			height: this._canvas.height,
 		});
@@ -71,6 +71,6 @@ export default L.Layer.extend({
 		let size = this._map.getSize();
 
 		this._canvas.width = size.x; this._canvas.height = size.y;
-		this._rePaint();
+		this._repaint();
 	}
 });

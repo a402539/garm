@@ -12,17 +12,31 @@ export default class Map {
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(this._map);
+        this._dataManager = new Worker("dataManager.js");
+        this._map.on('moveend', this._moveend, this);
+    }
+    _moveend() {
+        const zoom = this._map.getZoom();
+        const sbbox = this._map.getBounds();
+        const sw = sbbox.getSouthWest();
+        const ne = sbbox.getNorthEast();
+        const m1 = L.Projection.Mercator.project(L.latLng([sw.lat, sw.lng]));
+        const m2 = L.Projection.Mercator.project(L.latLng([ne.lat, ne.lng]));
+        this._dataManager.postMessage({
+            cmd: 'moveend',
+            zoom,
+            bbox: [m1.x, m1.y, m2.x, m2.y],
+            bounds: map.getPixelBounds(),
+        });
     }
     async load (id) {
         const response = await fetch(`maps/${id}`);
         const {id, name, layers} = await response.json();
         layers.forEach(layer => {
-            const canvasLayer = new CanvasLayer({dataManager});
-            canvasLayer.addTo(map);    
+            const canvasLayer = new CanvasLayer({dataManager, layerId: layer.id});
+            if (layer.visible) {
+                canvasLayer.addTo(map);
+            }            
         });
-
-
-        
-
     }
 };

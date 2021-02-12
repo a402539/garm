@@ -1,5 +1,5 @@
 export default {	
-	render2dpbf: (ctx, path2d) => {		
+	renderPath: (ctx, path2d) => {
 		ctx.beginPath();
 		ctx.strokeStyle = 'blue';
 		ctx.fillStyle = 'rgba(255, 0, 0, 0.01)';
