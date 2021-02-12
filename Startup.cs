@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -33,7 +34,7 @@ namespace garm
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "fenris", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "garm", Version = "v1" });
             });     
         }
         
@@ -49,7 +50,7 @@ namespace garm
             using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
             {
                 var context = serviceScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                context.Database.EnsureCreated();
+                context.Database.EnsureCreated();               
             }
 
             app.MapWhen(
@@ -58,12 +59,12 @@ namespace garm
                     appBranch.UseVectorTile();
                 }
             );
-            app.MapWhen(
-                context => BoxTiles.IsValid(context.Request.Path.ToString()),
-                appBranch => {
-                    appBranch.UseBoxTiles();
-                }
-            );
+            // app.MapWhen(
+            //     context => BoxTiles.IsValid(context.Request.Path.ToString()),
+            //     appBranch => {
+            //         appBranch.UseBoxTiles();
+            //     }
+            // );
 
             app.UseHttpsRedirection();
             app.UseDefaultFiles();
@@ -75,6 +76,6 @@ namespace garm
             {
                 endpoints.MapControllers();
             });         
-        }
+        }        
     }
 }

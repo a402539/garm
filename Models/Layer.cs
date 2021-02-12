@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace garm.Models {
-    [Table("Layer", Schema = "geo")]
+    [Table("Layers", Schema = "geo")]
     public class Layer {
         [Key]
         public Guid Id { get; set; }
@@ -14,5 +14,6 @@ namespace garm.Models {
         public string Name { get; set; }
         public bool Visible { get; set; }
         public virtual ICollection<Map> Maps { get; set; }
+        public virtual ICollection<Tile> Tiles { get; set; }
     }
 }

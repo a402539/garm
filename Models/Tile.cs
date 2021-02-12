@@ -5,11 +5,12 @@ using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace garm.Models {
-    [NotMapped]
-    public class Tile {
+namespace garm.Models {    
+    [Table("Tiles", Schema = "geo")]
+    public class Tile {        
         public int X { get; set; }
         public int Y { get; set; }
         public int Z { get; set; }
+        public Guid LayerId { get; set; }
     }
 }

@@ -5,7 +5,7 @@
 -- Dumped from database version 9.5.4
 -- Dumped by pg_dump version 9.5.4
 
--- Started on 2021-02-04 14:12:53
+-- Started on 2021-02-12 18:56:27
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -34,7 +34,7 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 
 
 --
--- TOC entry 3571 (class 0 OID 0)
+-- TOC entry 3590 (class 0 OID 0)
 -- Dependencies: 1
 -- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
 --
@@ -51,7 +51,7 @@ CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;
 
 
 --
--- TOC entry 3572 (class 0 OID 0)
+-- TOC entry 3591 (class 0 OID 0)
 -- Dependencies: 2
 -- Name: EXTENSION postgis; Type: COMMENT; Schema: -; Owner: 
 --
@@ -61,8 +61,142 @@ COMMENT ON EXTENSION postgis IS 'PostGIS geometry, geography, and raster spatial
 
 SET search_path = cat, pg_catalog;
 
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
 --
--- TOC entry 1417 (class 1255 OID 103754)
+-- TOC entry 204 (class 1259 OID 106980)
+-- Name: tiles; Type: TABLE; Schema: cat; Owner: postgres
+--
+
+CREATE TABLE tiles (
+    x integer NOT NULL,
+    y integer NOT NULL,
+    z integer NOT NULL
+);
+
+
+ALTER TABLE tiles OWNER TO postgres;
+
+--
+-- TOC entry 1440 (class 1255 OID 106993)
+-- Name: get_box2d_tiles(double precision, double precision, double precision, double precision); Type: FUNCTION; Schema: cat; Owner: postgres
+--
+
+CREATE FUNCTION get_box2d_tiles(xmin double precision, ymin double precision, xmax double precision, ymax double precision) RETURNS SETOF tiles
+    LANGUAGE plpgsql
+    AS $$
+DECLARE	
+	w float := 40075016.685578496;
+	h float := w / 2;
+	b box2d := ST_SetSRID(ST_MakeBox2D(ST_Point(xmin, ymin),ST_Point(xmax, ymax)), 3857);
+BEGIN	
+	RETURN QUERY
+	SELECT *
+	FROM cat.tiles
+	WHERE ST_Intersects(ST_MakeBox2D(ST_Point(cat.tile_x_merc(x, z), cat.tile_y_merc(y, z)), ST_Point(cat.tile_x_merc(x + 1, z), cat.tile_y_merc(y + 1, z))), b);
+END;
+$$;
+
+
+ALTER FUNCTION cat.get_box2d_tiles(xmin double precision, ymin double precision, xmax double precision, ymax double precision) OWNER TO postgres;
+
+--
+-- TOC entry 1443 (class 1255 OID 106992)
+-- Name: get_optimized_tiles(integer, integer, integer, integer, integer); Type: FUNCTION; Schema: cat; Owner: postgres
+--
+
+CREATE FUNCTION get_optimized_tiles(vx integer, vy integer, vz integer, zmax integer, threshold integer) RETURNS tiles[]
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+	tt cat.tiles[];
+	tiles cat.tiles[] := ARRAY[]::cat.tiles[];
+	vt RECORD;
+BEGIN	
+	IF vz <= zmax THEN		
+		tt := ARRAY(SELECT (x,y,z) FROM cat.tile_count WHERE (vx IS NULL OR x = vx) AND (vy IS NULL OR y = vy) AND z = vz AND n <= threshold);
+		IF array_length(tt, 1) > 0 THEN
+			tiles := array_cat(tiles, tt);		
+		END IF;
+		
+		FOR vt IN
+			SELECT x,y FROM cat.tile_count WHERE (vx IS NULL OR x = vx) AND (vy IS NULL OR y = vy) AND z = vz AND n > threshold
+		LOOP			
+			tt := cat.get_optimized_tiles(vt.x * 2, vt.y * 2, vz + 1, zmax, threshold);
+			IF array_length(tt, 1) > 0 THEN
+				tiles := array_cat(tiles, tt);		
+			END IF;
+			tt := cat.get_optimized_tiles(vt.x * 2 + 1,vt.y * 2, vz + 1, zmax, threshold);
+			IF array_length(tt, 1) > 0 THEN
+				tiles := array_cat(tiles, tt);		
+			END IF;
+			tt := cat.get_optimized_tiles(vt.x * 2,vt.y * 2 + 1, vz + 1, zmax, threshold);
+			IF array_length(tt, 1) > 0 THEN
+				tiles := array_cat(tiles, tt);		
+			END IF;
+			tt := cat.get_optimized_tiles(vt.x * 2 + 1,vt.y * 2 + 1, vz + 1, zmax, threshold);
+			IF array_length(tt, 1) > 0 THEN
+				tiles := array_cat(tiles, tt);		
+			END IF;			
+		END LOOP;	
+	END IF;
+	
+	RETURN tiles;
+END;
+$$;
+
+
+ALTER FUNCTION cat.get_optimized_tiles(vx integer, vy integer, vz integer, zmax integer, threshold integer) OWNER TO postgres;
+
+--
+-- TOC entry 1439 (class 1255 OID 106995)
+-- Name: get_tiles(public.geometry, integer, integer); Type: FUNCTION; Schema: cat; Owner: postgres
+--
+
+CREATE FUNCTION get_tiles(g public.geometry, zmin integer, zmax integer) RETURNS tiles[]
+    LANGUAGE plpgsql
+    AS $$
+
+DECLARE
+	b box2d := Box2D(g);
+	xmin float := ST_XMin(b);
+	xmax float := ST_XMax(b);
+	ymin float := ST_YMin(b);
+	ymax float := ST_YMax(b);
+	w float := 40075016.685578496;
+	h float := w / 2;	
+	n int := power(2, zmax);
+	tiles cat.tiles[] := ARRAY[]::cat.tiles[];	
+	x0 int := floor((xmin + h) * n / w);
+	y0 int := floor((h - ymin) * n / w);	
+	x1 int := floor((xmax + h) * n / w);
+	y1 int := floor((h - ymax) * n / w);
+	x int;
+	y int;
+	z int;
+BEGIN									
+	FOR z IN REVERSE zmax..zmin LOOP				
+		FOR x IN x0..x1 LOOP
+			FOR y IN y0..y1 LOOP				
+				tiles := array_append(tiles, (x, y, z)::cat.tiles);
+			END LOOP;
+		END LOOP;
+		x0 := x0 >> 1;
+		y0 := y0 >> 1;
+		x1 := x1 >> 1;
+		y1 := y1 >> 1;
+	END LOOP;
+	RETURN tiles;
+END;
+$$;
+
+
+ALTER FUNCTION cat.get_tiles(g public.geometry, zmin integer, zmax integer) OWNER TO postgres;
+
+--
+-- TOC entry 1419 (class 1255 OID 103754)
 -- Name: ls_bulk(json); Type: FUNCTION; Schema: cat; Owner: postgres
 --
 
@@ -296,7 +430,7 @@ $$;
 ALTER FUNCTION cat.ls_bulk(res json) OWNER TO postgres;
 
 --
--- TOC entry 1437 (class 1255 OID 106979)
+-- TOC entry 1442 (class 1255 OID 106979)
 -- Name: mvt_ls8_tile(integer, integer, integer); Type: FUNCTION; Schema: cat; Owner: postgres
 --
 
@@ -323,10 +457,82 @@ $$;
 
 ALTER FUNCTION cat.mvt_ls8_tile(x integer, y integer, z integer, OUT mvt bytea) OWNER TO postgres;
 
+--
+-- TOC entry 1446 (class 1255 OID 106998)
+-- Name: tile_x_merc(integer, integer); Type: FUNCTION; Schema: cat; Owner: postgres
+--
+
+CREATE FUNCTION tile_x_merc(x integer, z integer) RETURNS double precision
+    LANGUAGE plpgsql IMMUTABLE STRICT COST 1
+    AS $$
+DECLARE
+	w float := 40075016.685578496;
+	h float := w / 2;
+BEGIN		
+	RETURN w * x / power(2, z) - h;
+END;
+$$;
+
+
+ALTER FUNCTION cat.tile_x_merc(x integer, z integer) OWNER TO postgres;
+
+--
+-- TOC entry 1441 (class 1255 OID 106991)
+-- Name: tile_y_merc(integer, integer); Type: FUNCTION; Schema: cat; Owner: postgres
+--
+
+CREATE FUNCTION tile_y_merc(y integer, z integer) RETURNS double precision
+    LANGUAGE plpgsql IMMUTABLE STRICT COST 1
+    AS $$
+DECLARE
+	w float := 40075016.685578496;
+	h float := w / 2;
+BEGIN		
+	RETURN h - w * y / power(2, z);
+END;
+$$;
+
+
+ALTER FUNCTION cat.tile_y_merc(y integer, z integer) OWNER TO postgres;
+
+--
+-- TOC entry 1444 (class 1255 OID 106996)
+-- Name: update_tile_count(integer); Type: FUNCTION; Schema: cat; Owner: postgres
+--
+
+CREATE FUNCTION update_tile_count(zmax integer) RETURNS void
+    LANGUAGE sql
+    AS $$
+	DELETE FROM cat.tile_count;
+	INSERT INTO cat.tile_count
+	SELECT B.x, B.y, B.z, count(A.uid)
+	FROM cat.ls8 A, UNNEST(cat.get_tiles(A.wkb, 0, zmax)) B
+	GROUP BY B.x, B.y, B.z;
+$$;
+
+
+ALTER FUNCTION cat.update_tile_count(zmax integer) OWNER TO postgres;
+
+--
+-- TOC entry 1445 (class 1255 OID 106997)
+-- Name: update_tiles(integer, integer); Type: FUNCTION; Schema: cat; Owner: postgres
+--
+
+CREATE FUNCTION update_tiles(zmax integer, threshold integer) RETURNS void
+    LANGUAGE sql
+    AS $$
+	DELETE FROM cat.tiles;
+	INSERT INTO cat.tiles
+	SELECT * FROM UNNEST (cat.get_optimized_tiles(NULL, NULL, 0, zmax, threshold));
+$$;
+
+
+ALTER FUNCTION cat.update_tiles(zmax integer, threshold integer) OWNER TO postgres;
+
 SET search_path = public, pg_catalog;
 
 --
--- TOC entry 1418 (class 1255 OID 103733)
+-- TOC entry 1420 (class 1255 OID 103733)
 -- Name: bounds(geometry, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -351,7 +557,7 @@ $$;
 ALTER FUNCTION public.bounds(g geometry, srid integer) OWNER TO postgres;
 
 --
--- TOC entry 1419 (class 1255 OID 103734)
+-- TOC entry 1421 (class 1255 OID 103734)
 -- Name: cleanint(text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -372,7 +578,7 @@ $$;
 ALTER FUNCTION public.cleanint(i text) OWNER TO postgres;
 
 --
--- TOC entry 1420 (class 1255 OID 103735)
+-- TOC entry 1422 (class 1255 OID 103735)
 -- Name: cleannumeric(text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -393,7 +599,7 @@ $$;
 ALTER FUNCTION public.cleannumeric(i text) OWNER TO postgres;
 
 --
--- TOC entry 1421 (class 1255 OID 103736)
+-- TOC entry 1423 (class 1255 OID 103736)
 -- Name: labelgrid(geometry, numeric); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -421,7 +627,7 @@ $$;
 ALTER FUNCTION public.labelgrid(g geometry, grid_size numeric) OWNER TO postgres;
 
 --
--- TOC entry 1422 (class 1255 OID 103737)
+-- TOC entry 1424 (class 1255 OID 103737)
 -- Name: largestpart(geometry); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -464,7 +670,7 @@ $$;
 ALTER FUNCTION public.largestpart(g geometry) OWNER TO postgres;
 
 --
--- TOC entry 1423 (class 1255 OID 103738)
+-- TOC entry 1425 (class 1255 OID 103738)
 -- Name: linelabel(numeric, text, geometry); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -485,7 +691,7 @@ $$;
 ALTER FUNCTION public.linelabel(zoom numeric, label text, g geometry) OWNER TO postgres;
 
 --
--- TOC entry 1424 (class 1255 OID 103739)
+-- TOC entry 1426 (class 1255 OID 103739)
 -- Name: makearc(geometry, geometry, geometry, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -507,7 +713,7 @@ $$;
 ALTER FUNCTION public.makearc(p0 geometry, p1 geometry, p2 geometry, srid integer) OWNER TO postgres;
 
 --
--- TOC entry 1425 (class 1255 OID 103740)
+-- TOC entry 1427 (class 1255 OID 103740)
 -- Name: mercbuffer(geometry, numeric); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -526,7 +732,7 @@ $$;
 ALTER FUNCTION public.mercbuffer(g geometry, distance numeric) OWNER TO postgres;
 
 --
--- TOC entry 1426 (class 1255 OID 103741)
+-- TOC entry 1428 (class 1255 OID 103741)
 -- Name: mercdwithin(geometry, geometry, numeric); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -546,7 +752,7 @@ $$;
 ALTER FUNCTION public.mercdwithin(g1 geometry, g2 geometry, distance numeric) OWNER TO postgres;
 
 --
--- TOC entry 1427 (class 1255 OID 103742)
+-- TOC entry 1429 (class 1255 OID 103742)
 -- Name: merclength(geometry); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -562,7 +768,7 @@ $$;
 ALTER FUNCTION public.merclength(g geometry) OWNER TO postgres;
 
 --
--- TOC entry 1428 (class 1255 OID 103743)
+-- TOC entry 1430 (class 1255 OID 103743)
 -- Name: orientedenvelope(geometry); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -604,7 +810,7 @@ $$;
 ALTER FUNCTION public.orientedenvelope(g geometry) OWNER TO postgres;
 
 --
--- TOC entry 1429 (class 1255 OID 103744)
+-- TOC entry 1431 (class 1255 OID 103744)
 -- Name: sieve(geometry, double precision); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -631,7 +837,7 @@ $$;
 ALTER FUNCTION public.sieve(g geometry, area_threshold double precision) OWNER TO postgres;
 
 --
--- TOC entry 1430 (class 1255 OID 103745)
+-- TOC entry 1432 (class 1255 OID 103745)
 -- Name: sieve(geometry, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -658,7 +864,7 @@ $$;
 ALTER FUNCTION public.sieve(g geometry, area_threshold integer) OWNER TO postgres;
 
 --
--- TOC entry 1431 (class 1255 OID 103746)
+-- TOC entry 1433 (class 1255 OID 103746)
 -- Name: smartshrink(geometry, double precision, boolean); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -690,7 +896,7 @@ $$;
 ALTER FUNCTION public.smartshrink(geom geometry, ratio double precision, simplify boolean) OWNER TO postgres;
 
 --
--- TOC entry 1432 (class 1255 OID 103747)
+-- TOC entry 1434 (class 1255 OID 103747)
 -- Name: tilebbox(integer, integer, integer, integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -721,7 +927,7 @@ $$;
 ALTER FUNCTION public.tilebbox(z integer, x integer, y integer, srid integer) OWNER TO postgres;
 
 --
--- TOC entry 1433 (class 1255 OID 103748)
+-- TOC entry 1435 (class 1255 OID 103748)
 -- Name: topoint(geometry); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -750,7 +956,7 @@ $$;
 ALTER FUNCTION public.topoint(g geometry) OWNER TO postgres;
 
 --
--- TOC entry 1436 (class 1255 OID 103751)
+-- TOC entry 1438 (class 1255 OID 103751)
 -- Name: z(numeric); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -769,7 +975,7 @@ $_$;
 ALTER FUNCTION public.z(numeric) OWNER TO postgres;
 
 --
--- TOC entry 1435 (class 1255 OID 103750)
+-- TOC entry 1437 (class 1255 OID 103750)
 -- Name: zres(double precision); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -783,7 +989,7 @@ $$;
 ALTER FUNCTION public.zres(z double precision) OWNER TO postgres;
 
 --
--- TOC entry 1434 (class 1255 OID 103749)
+-- TOC entry 1436 (class 1255 OID 103749)
 -- Name: zres(integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -812,10 +1018,6 @@ CREATE SEQUENCE ls8_uid_seq
 
 
 ALTER TABLE ls8_uid_seq OWNER TO postgres;
-
-SET default_tablespace = '';
-
-SET default_with_oids = false;
 
 --
 -- TOC entry 203 (class 1259 OID 103757)
@@ -871,7 +1073,22 @@ CREATE TABLE ls8 (
 ALTER TABLE ls8 OWNER TO postgres;
 
 --
--- TOC entry 3440 (class 2606 OID 103765)
+-- TOC entry 205 (class 1259 OID 106985)
+-- Name: tile_count; Type: TABLE; Schema: cat; Owner: postgres
+--
+
+CREATE TABLE tile_count (
+    x integer NOT NULL,
+    y integer NOT NULL,
+    z integer NOT NULL,
+    n integer
+);
+
+
+ALTER TABLE tile_count OWNER TO postgres;
+
+--
+-- TOC entry 3455 (class 2606 OID 103765)
 -- Name: ls8_id_pkey; Type: CONSTRAINT; Schema: cat; Owner: postgres
 --
 
@@ -880,7 +1097,7 @@ ALTER TABLE ONLY ls8
 
 
 --
--- TOC entry 3442 (class 2606 OID 103767)
+-- TOC entry 3457 (class 2606 OID 103767)
 -- Name: ls8_sceneid_unique; Type: CONSTRAINT; Schema: cat; Owner: postgres
 --
 
@@ -889,7 +1106,25 @@ ALTER TABLE ONLY ls8
 
 
 --
--- TOC entry 3438 (class 1259 OID 103768)
+-- TOC entry 3461 (class 2606 OID 106989)
+-- Name: tile_count_pkey; Type: CONSTRAINT; Schema: cat; Owner: postgres
+--
+
+ALTER TABLE ONLY tile_count
+    ADD CONSTRAINT tile_count_pkey PRIMARY KEY (x, y, z);
+
+
+--
+-- TOC entry 3459 (class 2606 OID 106984)
+-- Name: tiles_pkey; Type: CONSTRAINT; Schema: cat; Owner: postgres
+--
+
+ALTER TABLE ONLY tiles
+    ADD CONSTRAINT tiles_pkey PRIMARY KEY (x, y, z);
+
+
+--
+-- TOC entry 3453 (class 1259 OID 103768)
 -- Name: idx_ls8_wkb; Type: INDEX; Schema: cat; Owner: postgres
 --
 
@@ -897,7 +1132,7 @@ CREATE INDEX idx_ls8_wkb ON ls8 USING gist (wkb);
 
 
 --
--- TOC entry 3570 (class 0 OID 0)
+-- TOC entry 3589 (class 0 OID 0)
 -- Dependencies: 7
 -- Name: public; Type: ACL; Schema: -; Owner: postgres
 --
@@ -908,7 +1143,7 @@ GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
--- Completed on 2021-02-04 14:12:55
+-- Completed on 2021-02-12 18:56:29
 
 --
 -- PostgreSQL database dump complete

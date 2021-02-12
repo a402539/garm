@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace garm.Models {    
-    [Table("Map", Schema = "geo")]
+    [Table("Maps", Schema = "geo")]
     public class Map {
         [Key]
         public Guid Id { get; set; }
