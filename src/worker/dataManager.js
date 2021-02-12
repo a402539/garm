@@ -44,8 +44,6 @@ async function getTiles (zoom, bbox, bounds) {
 							else {
 								path.moveTo(p.x, p.y);
 							}
-				
-
 						});
 						t[k].features.push({type: vf.type, path});							
 					}					
@@ -59,14 +57,17 @@ async function getTiles (zoom, bbox, bounds) {
 			Object.keys(layers).forEach(k => {
 				const {features, x, y, z, extent} = layers[k];				
 				const tw = 1 << (8 + zoom - z);
-				const x0 = x * tw - bounds.min.x;
+				let x0 = x * tw - bounds.min.x;
+				if (x0 + tw < 0) {
+					x0 += Math.pow(2, z) * tw;
+				}
 				const y0 = y * tw - bounds.min.y;
 				ctx.resetTransform();
 				const sc = tw / extent;				
 				ctx.transform(sc, 0, 0, sc, x0, y0);
 				features.forEach(feature => {
 					if (feature.type === 3) {															
-						Renderer.render2dpbf(canvas, feature.path);
+						Renderer.render2dpbf(ctx, feature.path);
 					}
 				});
 			});
