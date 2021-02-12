@@ -6,12 +6,7 @@ let canvas;
 let abortController;
 
 async function getBoxTiles(signal, bbox) {
-	const nw = bbox.getNorthWest();
-	const se = bbox.getSouthEast();
-	const xmin = nw.lng;
-	const ymin = nw.lat;
-	const xmax = se.lng;
-	const ymax = se.lat;
+	const [xmin, ymin, xmax, ymax] = bbox;
 	const response = await fetch(`/box/${[xmin,ymin,xmax,ymax].map(v => v.toFixed(6)).join(',')}`, { signal });
 	return response.json();
 }

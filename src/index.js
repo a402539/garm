@@ -2,13 +2,10 @@ import './index.css';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import CanvasLayer from './CanvasLayer.js';
+import Map from 'app/Map.js';
 
 window.addEventListener('load', async () => {
-    const map = L.map('map', {}).setView([55.45, 37.37], 10);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
+    const map = new Map(document.getElementById('map'), {center: [55.45, 37.37], zoom: 10});
 
     const dataManager = new Worker("dataManager.js");
     
