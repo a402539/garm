@@ -31,7 +31,7 @@ namespace garm.Controllers
         public async Task<ActionResult<IEnumerable<Tile>>> GetTiles(Box box)
         {  
             return await _context.Set<Tile>()
-                .FromSqlInterpolated($"EXECUTE geo.get_box2d_tiles({box.XMin},{box.YMin},{box.XMax},{box.YMax})")
+                .FromSqlInterpolated($"EXECUTE geo.get_box_tiles({box.Layers},{box.XMin},{box.YMin},{box.XMax},{box.YMax})")
                 .ToListAsync();
         }    
     }

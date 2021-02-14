@@ -6,15 +6,13 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace garm.Models {    
-    [Table("tiles", Schema = "geo")]
-    public class Tile {
+    [Table("map_layer", Schema = "geo")]
+    public class MapLayer {                
+        [Column("map_id")]
+        public Guid MapId { get; set; }
+        public virtual Map Map { get; set; }
         [Column("layer_id")]
         public Guid LayerId { get; set; }
-        [Column("x")]
-        public int X { get; set; }
-        [Column("y")]
-        public int Y { get; set; }
-        [Column("z")]
-        public int Z { get; set; }        
+        public Layer Layer { get; set; }
     }
 }

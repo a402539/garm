@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace garm.Models {
+
     [NotMapped]
     public class Box {
         public double XMin { get; set; }
@@ -14,4 +15,5 @@ namespace garm.Models {
         public double YMax { get; set; }
         public ICollection<Guid> Layers { get; set; }        
     }
+    
 }

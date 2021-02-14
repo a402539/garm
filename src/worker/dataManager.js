@@ -7,18 +7,28 @@ let abortController;
 let visibleLayers = {};
 
 async function getBoxTiles(signal, bbox) {
-	const [xmin, ymin, xmax, ymax] = bbox;
-	const ids = Object.keys(visibleLayers).join(',');
-	const response = await fetch(`/box/${layerId}/${[xmin,ymin,xmax,ymax].map(v => v.toFixed(6)).join(',')}`, { signal });
+	const [xmin, ymin, xmax, ymax] = bbox;	
+	const response = await fetch('/box', {
+		signal,
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({
+			layers: Object.keys(visibleLayers),
+			xmin, ymin,
+			xmax, ymax,
+		}),
+	});
 	return response.json();
 }
 
-async function getTiles (layerId, zoom, bbox, bounds) {	
+async function getTiles (zoom, bbox, bounds) {
 	if (abortController) {
 		abortController.abort();
 	}
 	abortController = new AbortController();	
-	const items = await getBoxTiles(layerId, abortController.signal, bbox);	
+	const items = await getBoxTiles(abortController.signal, bbox);	
 
 	const ctx = canvas.getContext("2d");
 	ctx.resetTransform();
@@ -102,8 +112,10 @@ onmessage = function(evt) {
 		case 'drawScreen':
 			canvas = new OffscreenCanvas(width, height);
 			break;
-		case 'moveend':						
-			getTiles(zoom, bbox, bounds);
+		case 'moveend':	
+			if (Object.keys(visibleLayers).length > 0) {
+				getTiles(zoom, bbox, bounds);
+			}			
 			break;
 		default:
 			console.warn('Warning: Bad command ', data);

@@ -19,9 +19,10 @@ namespace garm
 {
     public class Startup
     {
+        private readonly static string DataDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Data");
         public Startup(IConfiguration configuration)
         {
-            Configuration = configuration;
+            Configuration = configuration;            
         }
 
         public IConfiguration Configuration { get; }
@@ -29,7 +30,9 @@ namespace garm
         public void ConfigureServices(IServiceCollection services)
         {      
             services.AddDbContext<ApplicationDbContext>(options => {
-                options.UseLazyLoadingProxies().UseNpgsql(Configuration.GetConnectionString("Default"));
+                options
+                // .UseLazyLoadingProxies()
+                .UseNpgsql(Configuration.GetConnectionString("Default"));
             });
             services.AddControllers();
             services.AddSwaggerGen(c =>
@@ -41,16 +44,18 @@ namespace garm
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();                  
+            {                
+                app.UseDeveloperExceptionPage();                                  
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "garm v1"));
             }
 
-            using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
+            using (var scope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
             {
-                var context = serviceScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                context.Database.EnsureCreated();               
+                var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();                
+
+                db.Database.EnsureCreated();
+                db.Database.ExecuteSqlRaw(GetSql("all.sql"));
             }
 
             app.MapWhen(
@@ -76,6 +81,7 @@ namespace garm
             {
                 endpoints.MapControllers();
             });         
-        }        
+        }
+        private static string GetSql(string file) => File.ReadAllText(Path.Combine(DataDirectory, file));        
     }
 }
