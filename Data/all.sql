@@ -242,7 +242,13 @@ CREATE OR REPLACE FUNCTION geo.update_layer() RETURNS trigger AS $$
     END;
 $$ LANGUAGE 'plpgsql';
 
-CREATE TRIGGER update_layer AFTER INSERT OR DELETE ON geo.layers FOR EACH ROW EXECUTE FUNCTION geo.update_layer();
+DO $$
+BEGIN
+IF NOT EXISTS (SELECT * FROM pg_trigger WHERE tgname = 'update_layer') THEN
+	CREATE TRIGGER update_layer AFTER INSERT OR DELETE ON geo.layers FOR EACH ROW EXECUTE FUNCTION geo.update_layer();
+END IF;
+END;
+$$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION geo.update_tiles( 
 	layer_id uuid,   
