@@ -1,6 +1,7 @@
 CREATE SCHEMA IF NOT EXISTS geo;
 CREATE SCHEMA IF NOT EXISTS layers;
 
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;
 
 CREATE TABLE IF NOT EXISTS geo.layers
@@ -234,7 +235,7 @@ $$;
 CREATE OR REPLACE FUNCTION geo.update_layer() RETURNS trigger AS $$
     BEGIN
 		IF (TG_OP = 'INSERT') THEN
-        	EXECUTE format('CREATE TABLE layers.%I (feature_id uuid PRIMARY KEY, feature_geometry geometry)', NEW.layer_id);
+        	EXECUTE format('CREATE TABLE layers.%I (feature_id uuid NOT NULL DEFAULT uuid_generate_v4() PRIMARY KEY, feature_geometry geometry)', NEW.layer_id);
 		ELSIF (TG_OP = 'DELETE') THEN
 			EXECUTE format('DROP TABLE layers.%I', NEW.layer_id);
 		END IF;
