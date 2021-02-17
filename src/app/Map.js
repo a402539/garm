@@ -7,9 +7,10 @@ export default class Map {
         this._container = container;
         this._options = options;
         const {center = [55.45, 37.37], zoom = 10} = this._options;
-        this._map = L.map(this._container, {}).setView(center, zoom);
+        this._map = L.map(this._container, {zoomControl: false}).setView(center, zoom);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            
         }).addTo(this._map);
         this._dataManager = new Worker("dataManager.js");
         this._map.on('moveend', this._moveend, this);
@@ -45,9 +46,7 @@ export default class Map {
             bounds: this._map.getPixelBounds(),
         });
     }
-    async load (id) {
-        const response = await fetch(`maps/${id}`);
-        const {name, layers} = await response.json();
+    async load (layers) {
         this._layers = layers.reduce((a, layer) => {
             const c = new CanvasLayer({dataManager: this._dataManager, layerId: layer.id});
             a[layer.id] = c;

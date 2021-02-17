@@ -228,24 +228,21 @@ CREATE OR REPLACE FUNCTION geo.update_tile_count(
     VOLATILE    
 AS $$	
 	DELETE FROM geo.tiles_count A WHERE A.layer_id = layer_id;	
-	EXECUTE format('INSERT INTO geo.tiles_count SELECT layer_id, B.x, B.y, B.z, count(A.feature_id) FROM layers."%" A, UNNEST(geo.get_tiles(A.geom, 0, zmax)) B GROUP BY B.x, B.y, B.z;', layer_id);
+	EXECUTE format('INSERT INTO geo.tiles_count SELECT layer_id, B.x, B.y, B.z, count(A.feature_id) FROM layers.%I A, UNNEST(geo.get_tiles(A.feature_geometry, 0, zmax)) B GROUP BY B.x, B.y, B.z;', layer_id);
 $$;
 
-CREATE OR REPLACE FUNCTION geo.create_layer(
-	layer_id uuid)
-	RETURNS void
-	LANGUAGE 'sql'
-AS $$
-	EXECUTE format('CREATE TABLE layers."%" (feature_id uuid NOT NULL, geom geometry, CONSTRAINT "PK_%" PRIMARY KEY (feature_id))', layer_id, layer_id);
-$$;
+CREATE OR REPLACE FUNCTION geo.update_layer() RETURNS trigger AS $$
+    BEGIN
+		IF (TG_OP = 'INSERT') THEN
+        	EXECUTE format('CREATE TABLE layers.%I (feature_id uuid PRIMARY KEY, feature_geometry geometry)', NEW.layer_id);
+		ELSIF (TG_OP = 'DELETE') THEN
+			EXECUTE format('DROP TABLE layers.%I', NEW.layer_id);
+		END IF;
+        RETURN NEW;
+    END;
+$$ LANGUAGE 'plpgsql';
 
-CREATE OR REPLACE FUNCTION geo.delete_layer(
-	layer_id uuid)
-	RETURNS void
-	LANGUAGE 'sql'
-AS $$
-	EXECUTE format('DROP TABLE layers."%";', layer_id);
-$$;
+CREATE TRIGGER update_layer AFTER INSERT OR DELETE ON geo.layers FOR EACH ROW EXECUTE FUNCTION geo.update_layer();
 
 CREATE OR REPLACE FUNCTION geo.update_tiles( 
 	layer_id uuid,   

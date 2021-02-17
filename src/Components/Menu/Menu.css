@@ -1,0 +1,14 @@
+.menu .menu-header {
+    position: relative;
+}
+.menu .menu-children {
+    position: absolute;
+    z-index: 1;
+}
+.menu .menu-children.hidden {
+    display: none;
+}
+.menu .menu-header,
+.menu .menu-item {
+    cursor: pointer;
+}

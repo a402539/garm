@@ -12,18 +12,18 @@ async function getBoxTiles(signal, bbox) {
 		signal,
 		method: 'POST',
 		headers: {
-			'Content-Type': 'application/json'
+			'Content-Type': 'application/json',
 		},
 		body: JSON.stringify({
-			layers: Object.keys(visibleLayers),
 			xmin, ymin,
 			xmax, ymax,
+			layers: Object.keys(visibleLayers),
 		}),
 	});
 	return response.json();
 }
 
-async function getTiles (zoom, bbox, bounds) {
+async function getTiles (zoom, bbox, bounds) {	
 	if (abortController) {
 		abortController.abort();
 	}
@@ -105,17 +105,21 @@ onmessage = function(evt) {
 	switch(cmd) {
 		case 'addLayer':
 			visibleLayers[layerId] = true;
+			getTiles(zoom, bbox, bounds);
 			break;
 		case 'removeLayer':
 			delete visibleLayers[layerId];
+			if (Object.keys(visibleLayers).length) {
+				getTiles(zoom, bbox, bounds);
+			}
 			break;
 		case 'drawScreen':
 			canvas = new OffscreenCanvas(width, height);
 			break;
-		case 'moveend':	
-			if (Object.keys(visibleLayers).length > 0) {
+		case 'moveend':
+			if (Object.keys(visibleLayers).length) {
 				getTiles(zoom, bbox, bounds);
-			}			
+			}
 			break;
 		default:
 			console.warn('Warning: Bad command ', data);

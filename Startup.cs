@@ -55,7 +55,7 @@ namespace garm
                 var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();                
 
                 db.Database.EnsureCreated();
-                db.Database.ExecuteSqlRaw(GetSql("all.sql"));
+                // db.Database.ExecuteSqlRaw(GetSql("all.sql"));
             }
 
             app.MapWhen(

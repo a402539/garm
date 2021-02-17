@@ -1,0 +1,7 @@
+.list-item.map-list-item {
+    padding: 10px;    
+}
+.list-item.map-list-item > * {
+    margin-right: 10px;
+    cursor: pointer;
+}

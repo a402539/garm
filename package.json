@@ -4,7 +4,8 @@
   "description": "",
   "main": "wwwroot/main.js",
   "scripts": {
-    "build": "rollup -c",
+    "build": "npm run svg & rollup -c",
+    "svg": "node svg.js",
     "watch": "rollup -c -w"
   },
   "author": "liaozhai@github.com",
@@ -22,6 +23,7 @@
     "d3-geo": "^2.0.1",
     "d3-tile": "^1.0.0",
     "leaflet": "^1.7.1",
+    "mini-svg-data-uri": "^1.2.3",
     "pbf": "^3.2.1",
     "rollup": "^2.38.3",
     "rollup-plugin-babel": "^4.4.0",

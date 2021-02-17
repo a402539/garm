@@ -2,22 +2,44 @@ html, body {
     padding: 0px;
     margin: 0px;
 }
+* {
+    font-family: Arial, Helvetica, sans-serif;
+}
 .app {
-    --sidebar-width-collapsed: 80px;
+    --sidebar-width-collapsed: 0px;
     --sidebar-width-expanded: 80px;
     --header-height: 40px;    
     --content-height: calc(100vh - var(--header-height));
     --map-width-collapsed: calc(100% - var(--sidebar-width-collapsed));
     --map-width-expanded: calc(100% - var(--sidebar-width-expanded));
+    --menu-item-width: 100px;
 }
 .app * {
     box-sizing: border-box;
 }
 .app .header {
     height: var(--header-height);
+    z-index: 401;
+    position: relative;
+    padding: 5px;
+}
+.app .header > * {
+    float: left;
+}
+.app .header .menu .menu-header,
+.app .header .menu .menu-children {
+    background-color: #FFFFFF;
+    width: var(--menu-item-width);
+}
+.app .header .menu .menu-header,
+.app .header .menu .menu-children .menu-item {
+    padding: 6px;
 }
 .app .content > * {
     float: left;
+}
+.app .content {
+    clear: both;
 }
 .app .content .sidebar {
     width: var(--sidebar-width-collapsed);
@@ -31,4 +53,13 @@ html, body {
 }
 .app .content .map.expanded {
     width: var(--map-width-expanded);    
+}
+.component.dialog .icon {
+    display: inline-block;
+    background-repeat: no-repeat;
+    background-position: center;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
 }

@@ -14,7 +14,7 @@ namespace garm
     public class VectorTile
     {
         private readonly ILogger _logger;
-        static Regex _rxValid = new Regex(@"/tile/(?<z>\d{1,2})/(?<x>\d+)/(?<y>\d+)");        
+        static Regex _rxValid = new Regex(@"/tile/(?<layer>[a-z0-9\-]+)/(?<z>\d{1,2})/(?<x>\d+)/(?<y>\d+)");
         private readonly RequestDelegate _next;
 
         public IConfiguration Configuration { get; }
@@ -29,11 +29,12 @@ namespace garm
         public async Task Invoke(HttpContext context)
         {            
             var m = _rxValid.Match(context.Request.Path);
+            string layerId = m.Groups["layer"].Value;
             int x = int.Parse(m.Groups["x"].Value);
             int y = int.Parse(m.Groups["y"].Value);
             int z = int.Parse(m.Groups["z"].Value);
 
-            var path = Path.Combine("tiles", z.ToString(), x.ToString());
+            var path = Path.Combine("tiles", layerId, z.ToString(), x.ToString());
             Directory.CreateDirectory(path);
 
             var file = Path.ChangeExtension(Path.Combine(path, y.ToString()), ".pbf");            
