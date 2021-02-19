@@ -21,4 +21,7 @@ export default class Component extends Evented {
     }
     _render(element, options) {
     }
+    get element () {
+        return this._element;
+    }
 };

@@ -125,7 +125,7 @@ END;
 $$;
 
 CREATE OR REPLACE FUNCTION geo.get_optimized_tiles(
-    layer_id uuid,
+    layerid uuid,
 	vx integer,
 	vy integer,
 	vz integer,
@@ -152,19 +152,19 @@ BEGIN
 		FOR vt IN
 			SELECT x,y FROM geo.tiles_count WHERE (vx IS NULL OR x = vx) AND (vy IS NULL OR y = vy) AND z = vz AND n > threshold
 		LOOP			
-			tt := geo.get_optimized_tiles(layer_id, vt.x * 2, vt.y * 2, vz + 1, zmax, threshold);
+			tt := geo.get_optimized_tiles(layerid, vt.x * 2, vt.y * 2, vz + 1, zmax, threshold);
 			IF array_length(tt, 1) > 0 THEN
 				tiles := array_cat(tiles, tt);		
 			END IF;
-			tt := geo.get_optimized_tiles(layer_id, vt.x * 2 + 1,vt.y * 2, vz + 1, zmax, threshold);
+			tt := geo.get_optimized_tiles(layerid, vt.x * 2 + 1,vt.y * 2, vz + 1, zmax, threshold);
 			IF array_length(tt, 1) > 0 THEN
 				tiles := array_cat(tiles, tt);		
 			END IF;
-			tt := geo.get_optimized_tiles(layer_id, vt.x * 2,vt.y * 2 + 1, vz + 1, zmax, threshold);
+			tt := geo.get_optimized_tiles(layerid, vt.x * 2,vt.y * 2 + 1, vz + 1, zmax, threshold);
 			IF array_length(tt, 1) > 0 THEN
 				tiles := array_cat(tiles, tt);		
 			END IF;
-			tt := geo.get_optimized_tiles(layer_id, vt.x * 2 + 1,vt.y * 2 + 1, vz + 1, zmax, threshold);
+			tt := geo.get_optimized_tiles(layerid, vt.x * 2 + 1,vt.y * 2 + 1, vz + 1, zmax, threshold);
 			IF array_length(tt, 1) > 0 THEN
 				tiles := array_cat(tiles, tt);		
 			END IF;			
@@ -220,16 +220,18 @@ END;
 $$;
 
 CREATE OR REPLACE FUNCTION geo.update_tile_count( 
-	layer_id uuid,   
+	layerid uuid,
 	zmax integer)
     RETURNS void
-    LANGUAGE 'sql'
+    LANGUAGE 'plpgsql'
 
     COST 100
     VOLATILE    
 AS $$	
-	DELETE FROM geo.tiles_count A WHERE A.layer_id = layer_id;	
-	EXECUTE format('INSERT INTO geo.tiles_count SELECT layer_id, B.x, B.y, B.z, count(A.feature_id) FROM layers.%I A, UNNEST(geo.get_tiles(A.feature_geometry, 0, zmax)) B GROUP BY B.x, B.y, B.z;', layer_id);
+BEGIN
+	DELETE FROM geo.tiles_count A WHERE A.layer_id = layerid;	
+	EXECUTE format('INSERT INTO geo.tiles_count SELECT %L::uuid, B.x, B.y, B.z, count(A.feature_id) FROM layers.%I A, UNNEST(geo.get_tiles(A.feature_geometry, 0, %s)) B GROUP BY B.x, B.y, B.z;', layerid, layerid, zmax);
+END;
 $$;
 
 CREATE OR REPLACE FUNCTION geo.update_layer() RETURNS trigger AS $$
@@ -252,7 +254,7 @@ END;
 $$ LANGUAGE 'plpgsql';
 
 CREATE OR REPLACE FUNCTION geo.update_tiles( 
-	layer_id uuid,   
+	layerid uuid,
 	zmax integer,
 	threshold integer)
     RETURNS void
@@ -264,5 +266,5 @@ CREATE OR REPLACE FUNCTION geo.update_tiles(
 AS $$
 	DELETE FROM geo.tiles;
 	INSERT INTO geo.tiles
-	SELECT A.* FROM UNNEST (geo.get_optimized_tiles(layer_id, NULL, NULL, 0, zmax, threshold)) A;
+	SELECT A.* FROM UNNEST (geo.get_optimized_tiles(layerid, NULL, NULL, 0, zmax, threshold)) A;
 $$;
