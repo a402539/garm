@@ -272,6 +272,7 @@ $$;
 CREATE OR REPLACE FUNCTION geo.mvt_tile(layerid uuid, zoom integer, x integer, y integer, out mvt bytea) RETURNS bytea
 AS $$
 BEGIN
-	EXECUTE format('SELECT ST_AsMVT(q, %1$L, 4096, %2$L) FROM (SELECT feature_id, ST_AsMVTGeom(feature_geometry,TileBBox(%3$s, %4$s, %5$s),4096,256,false) geom FROM layers.%1$I WHERE feature_geometry && TileBBox(%3$s, %4$s, %5$s) AND ST_Intersects(feature_geometry, TileBBox(%3$s, %4$s, %5$s))) q', layerid, 'geom', zoom, x, y);
+	EXECUTE format('SELECT ST_AsMVT(q, %1$L, 4096, %2$L) FROM (SELECT feature_id, ST_AsMVTGeom(feature_geometry,TileBBox(%3$s, %4$s, %5$s),4096,256,false) geom FROM layers.%1$I WHERE feature_geometry && TileBBox(%3$s, %4$s, %5$s) AND ST_Intersects(feature_geometry, TileBBox(%3$s, %4$s, %5$s))) q', layerid, 'geom', zoom, x, y) INTO mvt;
+	RETURN;
 END;
 $$ LANGUAGE 'plpgsql';
