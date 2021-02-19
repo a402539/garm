@@ -4,6 +4,7 @@ import Map from './Map.js';
 import * as Components from 'Components/index.js';
 import * as MapDialog from './MapDialog/index.js';
 import * as LayerDialog from './LayerDialog/index.js';
+import MapInfo from './MapInfo.js';
 import T from './strings.js';
 
 export default class App {
@@ -58,6 +59,10 @@ export default class App {
         layerMenu.addEventListener('open', () => mapMenu.close());
         this._map = new Map(this._container.querySelector('.map'), {center: [55.45, 37.37], zoom: 10});
     }
+    get sidebar() {
+        this._sidebar = this._sidebar || new Sidebar(this._container.querySelector('.sidebar'));
+        return this._sidebar;
+    }
     async _createMap() {        
         let dlg = new MapDialog.Create();
         dlg.on('close', () => {
@@ -75,9 +80,11 @@ export default class App {
             const {id, name, layers} = await response.json();
             this._mapInfo = {id, name, layers};            
             dlg.destroy();
-            dlg = null;            
+            dlg = null;
+            const p = this.sidebar.add('map');
+            new MapInfo(p, this._mapInfo);
         });        
-    }
+    }    
     async _openMap() {
         const response = await fetch('maps');
         const data = await response.json();
@@ -94,6 +101,8 @@ export default class App {
             if (Array.isArray(layers) && layers.length) {
                 await this._map.load(layers);
             }
+            const p = this.sidebar.add('map');
+            new MapInfo(p, this._mapInfo);
         });
         dlg.items = data;
     }
