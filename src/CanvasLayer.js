@@ -14,10 +14,19 @@ export default L.Layer.extend({
 		}
 
 		// map.on('resize', this._setSize, this);
-        
+		const zoom = map.getZoom();
+        const bounds = map.getBounds();
+        const sw = bounds.getSouthWest();
+        const ne = bounds.getNorthEast();
+        const m1 = L.Projection.Mercator.project(L.latLng([sw.lat, sw.lng]));
+        const m2 = L.Projection.Mercator.project(L.latLng([ne.lat, ne.lng]));
+
 		this.options.dataManager.postMessage({
 			cmd: 'addLayer',
 			layerId: this.options.layerId,
+			zoom,
+            bbox: [m1.x, m1.y, m2.x, m2.y],
+            bounds: map.getPixelBounds(),
 			dateBegin: this.options.dateBegin,
 			dateEnd: this.options.dateEnd,
 		});

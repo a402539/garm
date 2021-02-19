@@ -50,6 +50,7 @@ export default class Map {
         this._layers = layers.reduce((a, layer) => {
             const c = new CanvasLayer({dataManager: this._dataManager, layerId: layer.id});
             a[layer.id] = c;
+            layer.visible = true;
             if (layer.visible) {
                 c.addTo(this._map);
             }            
