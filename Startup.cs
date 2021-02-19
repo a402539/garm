@@ -56,6 +56,7 @@ namespace garm
 
                 db.Database.EnsureCreated();
                 db.Database.ExecuteSqlRaw(GetSql("all.sql"));
+                // db.Database.ExecuteSqlRaw(GetSql("postgis-vt-util.sql"));                
             }
 
             app.MapWhen(

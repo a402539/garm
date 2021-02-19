@@ -30,9 +30,9 @@ namespace garm
         {            
             var m = _rxValid.Match(context.Request.Path);
             string layerId = m.Groups["layer"].Value;
-            int x = int.Parse(m.Groups["x"].Value);
-            int y = int.Parse(m.Groups["y"].Value);
             int z = int.Parse(m.Groups["z"].Value);
+            int x = int.Parse(m.Groups["x"].Value);
+            int y = int.Parse(m.Groups["y"].Value);            
 
             var path = Path.Combine("tiles", layerId, z.ToString(), x.ToString());
             Directory.CreateDirectory(path);
@@ -50,21 +50,25 @@ namespace garm
                     await using var conn = new NpgsqlConnection(Configuration.GetConnectionString("Default"));
                     await conn.OpenAsync();
                     
-                    await using (var cmd = new NpgsqlCommand("SELECT cat.mvt_ls8_tile(@x, @y, @z)", conn))
+                    await using (var cmd = new NpgsqlCommand("SELECT geo.mvt_tile(@layerid, @z, @x, @y)", conn))
                     {
-                        cmd.Parameters.AddWithValue("x", x);
-                        cmd.Parameters.AddWithValue("y", y);
+                        cmd.Parameters.AddWithValue("layerid", new Guid(layerId));
                         cmd.Parameters.AddWithValue("z", z);
+                        cmd.Parameters.AddWithValue("x", x);
+                        cmd.Parameters.AddWithValue("y", y);                        
                         var p = new NpgsqlParameter("mvt", DbType.Binary) { Direction = ParameterDirection.Output };
                         cmd.Parameters.Add(p);
 
                         await cmd.ExecuteNonQueryAsync();
                         byte[] mvt = p.Value as byte[];
-
-                        await File.WriteAllBytesAsync(file, mvt);
-                        
                         context.Response.ContentType = "application/octet-stream";
-                        await context.Response.Body.WriteAsync(mvt, 0, mvt.Length);
+                        if (mvt != null) {
+                            await File.WriteAllBytesAsync(file, mvt);
+                            await context.Response.Body.WriteAsync(mvt, 0, mvt.Length);                        
+                        }
+                        else {
+                            await context.Response.Body.WriteAsync(new byte[] {}, 0, 0);
+                        }                                                
                     }
                 }                         
             }

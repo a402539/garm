@@ -2,7 +2,7 @@ CREATE SCHEMA IF NOT EXISTS geo;
 CREATE SCHEMA IF NOT EXISTS layers;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;
+CREATE EXTENSION IF NOT EXISTS postgis;
 
 CREATE TABLE IF NOT EXISTS geo.layers
 (
@@ -264,7 +264,14 @@ CREATE OR REPLACE FUNCTION geo.update_tiles(
     VOLATILE 
     
 AS $$
-	DELETE FROM geo.tiles;
+	DELETE FROM geo.tiles WHERE layer_id = layerid;
 	INSERT INTO geo.tiles
 	SELECT A.* FROM UNNEST (geo.get_optimized_tiles(layerid, NULL, NULL, 0, zmax, threshold)) A;
 $$;
+
+CREATE OR REPLACE FUNCTION geo.mvt_tile(layerid uuid, zoom integer, x integer, y integer, out mvt bytea) RETURNS bytea
+AS $$
+BEGIN
+	EXECUTE format('SELECT ST_AsMVT(q, %1$L, 4096, %2$L) FROM (SELECT feature_id, ST_AsMVTGeom(feature_geometry,TileBBox(%3$s, %4$s, %5$s),4096,256,false) geom FROM layers.%1$I WHERE feature_geometry && TileBBox(%3$s, %4$s, %5$s) AND ST_Intersects(feature_geometry, TileBBox(%3$s, %4$s, %5$s))) q', layerid, 'geom', zoom, x, y);
+END;
+$$ LANGUAGE 'plpgsql';
