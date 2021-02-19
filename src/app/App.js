@@ -4,7 +4,7 @@ import Map from './Map.js';
 import * as Components from 'Components/index.js';
 import * as MapDialog from './MapDialog/index.js';
 import * as LayerDialog from './LayerDialog/index.js';
-import MapInfo from './MapInfo.js';
+import MapInfo from './MapInfo/MapInfo.js';
 import T from './strings.js';
 
 export default class App {
@@ -60,7 +60,7 @@ export default class App {
         this._map = new Map(this._container.querySelector('.map'), {center: [55.45, 37.37], zoom: 10});
     }
     get sidebar() {
-        this._sidebar = this._sidebar || new Sidebar(this._container.querySelector('.sidebar'));
+        this._sidebar = this._sidebar || new Components.Sidebar(this._container.querySelector('.sidebar'));
         return this._sidebar;
     }
     async _createMap() {        
@@ -81,8 +81,8 @@ export default class App {
             this._mapInfo = {id, name, layers};            
             dlg.destroy();
             dlg = null;
-            const p = this.sidebar.add('map');
-            new MapInfo(p, this._mapInfo);
+           // const p = this.sidebar.add('map');
+           // new MapInfo(p, this._mapInfo);
         });        
     }    
     async _openMap() {
@@ -101,8 +101,8 @@ export default class App {
             if (Array.isArray(layers) && layers.length) {
                 await this._map.load(layers);
             }
-            const p = this.sidebar.add('map');
-            new MapInfo(p, this._mapInfo);
+           // const p = this.sidebar.add('map');
+           // new MapInfo(p, this._mapInfo);
         });
         dlg.items = data;
     }

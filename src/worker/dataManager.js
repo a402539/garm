@@ -35,7 +35,7 @@ async function getTiles (zoom, bbox, bounds) {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);	
 
 	Promise.all(
-		items.map(({x, y, z}) => {
+		items.map(({layerId, x, y, z}) => {
 			return fetch(`/tile/${layerId}/${z}/${x}/${y}`)
 			.then(res => res.blob())
 			.then(blob => blob.arrayBuffer())
