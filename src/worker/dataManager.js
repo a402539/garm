@@ -58,10 +58,11 @@ async function getTiles (zoom, bbox, bounds) {
 		abortController.abort();
 	}
 	abortController = new AbortController();	
-	const items = await getBoxTiles(abortController.signal, bbox);	
+	const boxTiles = await getBoxTiles(abortController.signal, bbox);	
 	const promisesByLayers = {};
-	items.forEach(it => {
-		let data = promisesByLayers[it.layerId] || {};
+	Object.keys(boxTiles).forEach(layerId => {
+		const it = boxTiles[layerId];
+		let data = promisesByLayers[layerId] || {};
 		let arr = data.promises || [];
 		arr.push(getTilePromise(it));
 		data.promises = arr;
