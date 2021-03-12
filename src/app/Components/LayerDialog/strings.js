@@ -1,13 +1,13 @@
-import T from 'Translation.js';
+import T from '@scanex/translations';
 
-T.add('ru', {    
+T.addText('ru', {    
     dialog: {
         layer: {
             name: 'Название'
         },      
     },
 });
-T.add('en', {    
+T.addText('en', {
     dialog: {
         layer: {
             name: 'Name'
@@ -15,4 +15,4 @@ T.add('en', {
     },    
 });
 
-export default T;
+export default T.getText.bind(T);

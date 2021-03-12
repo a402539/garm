@@ -1,13 +1,14 @@
-import T from 'Translation.js';
+import T from '@scanex/translations';
 
-T.add('ru', {    
+T.addText('ru', {
     dialog: {
         map: {
             name: 'Название'
         },      
     },
 });
-T.add('en', {    
+
+T.addText('en', {    
     dialog: {
         map: {
             name: 'Name'
@@ -15,4 +16,4 @@ T.add('en', {
     },    
 });
 
-export default T;
+export default T.getText.bind(T);

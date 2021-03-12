@@ -1,5 +1,5 @@
-import Component from 'Components/Component.js';
-import T from './strings.js';
+import {Component} from '@scanex/components';
+import translate from './strings.js';
 
 export default class MapInfo extends Component {
     constructor(container, options) {
@@ -8,7 +8,7 @@ export default class MapInfo extends Component {
     _render(element, options) {
         const {name} = options;
         element.innerHTML = `<div>
-            <label>${T.translate('info.map.name')}</label>
+            <label>${translate('info.map.name')}</label>
             <label>${name}</label>
         </div>`;
     }

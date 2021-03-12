@@ -1,9 +1,8 @@
-import babel from 'rollup-plugin-babel';
-import resolve from '@rollup/plugin-node-resolve';
+import babel from '@rollup/plugin-babel';
 import commonjs from '@rollup/plugin-commonjs';
 import css from 'rollup-plugin-css-porter';
 import json from '@rollup/plugin-json';
-// import cpy from 'rollup-plugin-cpy';
+import resolve from '@rollup/plugin-node-resolve';
 
 export default [
     {
@@ -12,7 +11,7 @@ export default [
             file: 'wwwroot/main.js',
             format: 'iife',
             sourcemap: true,
-            name: 'D3T',
+            name: 'Garm',
             globals: {
                 'leaflet': 'L',
             },
@@ -24,11 +23,8 @@ export default [
             commonjs(),            
             json(),
             css({dest: 'wwwroot/main.css', minified: false}),
-            // cpy([
-            //     {files: 'src/images/*.*', dest: 'public/assets/images'},
-            //     {files: 'src/ImageBitmapLoader-worker.js', dest: 'public'},
-            // ]),
-            babel({                
+            babel({    
+                babelHelpers: 'bundled',
                 extensions: ['.js', '.mjs'],
                 exclude: ['node_modules/@babel/**', 'node_modules/core-js/**'],
                 include: ['src/**']
@@ -52,7 +48,8 @@ export default [
             }),
             commonjs(),            
             json(),            
-            babel({                
+            babel({
+                babelHelpers: 'bundled',
                 extensions: ['.js', '.mjs'],
                 exclude: ['node_modules/@babel/**', 'node_modules/core-js/**'],
                 include: ['src/**']

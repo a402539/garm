@@ -1,5 +1,6 @@
-import T from 'Translation.js';
-T.add('ru', {
+import T from '@scanex/translations';
+
+T.addText('ru', {
     menu: {
         map: {
             title: 'Карта',
@@ -30,7 +31,7 @@ T.add('ru', {
         cancel: 'Отменить',
     },    
 });
-T.add('en', {
+T.addText('en', {
     menu: {
         map: {
             title: 'Map',
@@ -62,4 +63,4 @@ T.add('en', {
     },    
 });
 
-export default T;
+export default T.getText.bind(T);
