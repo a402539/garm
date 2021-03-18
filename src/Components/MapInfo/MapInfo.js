@@ -13,8 +13,12 @@ export default class MapInfo extends Component {
         super(container, options);
     }    
     _render(element, options) {
-        const {name} = options;
+        const {id, name} = options;
         element.innerHTML = `<div>
+            <label>${translate('info.map.id')}</label>
+            <label>${id}</label>
+        </div>
+        <div>
             <label>${translate('info.map.name')}</label>
             <label>${name}</label>
         </div>`;

@@ -51,26 +51,34 @@ export default class MapController extends Controller {
             }            
         }); 
     }
-    async open() {
-        const {ok, result} = await this._httpGet('maps');
-        if (ok) {
-            this._layers = {};
-            let dlg = new MapDialog.Open();
-            dlg.on('close', () => {
-                dlg.destroy();
-                dlg = null;
-            });
-            dlg.on('select', async e => {                            
-                this._mapInfo = e.detail;
-                dlg.destroy();
-                dlg = null;
-                Array.isArray(this._mapInfo.layers) && this._mapInfo.layers.forEach(layer => {
-                    layer.visible = true;
-                    this.addLayer(layer);
-                });
-            });
-            dlg.items = result;
-        }        
+    open() {
+        return new Promise((resolve, reject) => {
+            this._httpGet('maps').then(({ok, result}) => {
+                if (ok) {
+                    this._layers = {};
+                    let dlg = new MapDialog.Open();
+                    dlg.on('close', () => {
+                        dlg.destroy();
+                        dlg = null;
+                        reject();
+                    });
+                    dlg.on('select', async e => {                            
+                        this._mapInfo = e.detail;
+                        dlg.destroy();
+                        dlg = null;
+                        Array.isArray(this._mapInfo.layers) && this._mapInfo.layers.forEach(layer => {
+                            layer.visible = true;
+                            this.addLayer(layer);
+                        });
+                        resolve(this._mapInfo);
+                    });
+                    dlg.items = result;
+                }
+                else {
+                    reject();
+                }
+            });              
+        });              
     }
     async save() {
 

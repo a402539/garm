@@ -23,7 +23,7 @@ async function getBoxTiles(signal, bbox) {
 	return response.json();
 }
 
-function getTilePromise ({layerId, z, x, y}) {
+function getTilePromise (layerId, z, x, y) {
 	return fetch(`/tile/${layerId}/${z}/${x}/${y}`)
 	.then(res => res.blob())
 	.then(blob => blob.arrayBuffer())
@@ -63,12 +63,14 @@ async function getTiles (zoom, bbox, bounds) {
 	boxTiles.forEach(({layerId, tiles}) => {		
 		let data = promisesByLayers[layerId] || {};
 		let arr = data.promises || [];
-		arr.push(getTilePromise(it));
+		for (const {z,x,y} of tiles) {
+			arr.push(getTilePromise(layerId, z, x, y));
+		}	
 		data.promises = arr;
 		// let tiles = data.tiles || [];
 		// tiles.push(it);
 		data.tiles = tiles;
-		promisesByLayers[it.layerId] = data;
+		promisesByLayers[layerId] = data;
 	});
 	Object.keys(promisesByLayers).forEach(layerId => {
 		const pt = promisesByLayers[layerId];

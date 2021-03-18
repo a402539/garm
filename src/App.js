@@ -85,8 +85,9 @@ export default class AppController extends Controller {
         await this._controllers.map.create();
     }
 
-    async _openMap() {        
-        await this._controllers.map.open();
+    _openMap() {        
+        this._controllers.map.open().then(mapInfo => {            
+        });
     }
 
     async _saveMap() {
