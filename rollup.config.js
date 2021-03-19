@@ -18,18 +18,11 @@ export default [
             },
         },
         plugins: [                      
-            resolve({                
-                moduleDirectories: ['node_modules', 'src']
-            }),
-            commonjs(),            
+            resolve({moduleDirectories: ['node_modules', 'src']}),
+            commonjs(),
             json(),
             css({dest: 'wwwroot/main.css', minified: false}),
-            babel({    
-                babelHelpers: 'bundled',
-                extensions: ['.js', '.mjs'],
-                exclude: ['node_modules/@babel/**', 'node_modules/core-js/**'],
-                include: ['src/**']
-            }),
+            babel({babelHelpers: 'bundled'}),
             terser(),
         ],
     }, 
@@ -45,17 +38,10 @@ export default [
             },
         },
         plugins: [                      
-            resolve({                
-                moduleDirectories: ['node_modules', 'src']
-            }),
-            commonjs(),            
-            json(),            
-            babel({
-                babelHelpers: 'bundled',
-                extensions: ['.js', '.mjs'],
-                exclude: ['node_modules/@babel/**', 'node_modules/core-js/**'],
-                include: ['src/**']
-            }),
+            resolve({moduleDirectories: ['node_modules', 'src']}),
+            commonjs(),
+            json(),
+            babel({babelHelpers: 'bundled'}),
         ],
     },       
 ];

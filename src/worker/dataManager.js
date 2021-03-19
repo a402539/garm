@@ -42,7 +42,11 @@ function getTilePromise (layerId, z, x, y) {
 						path.lineTo(p.x, p.y);
 					}
 					else {
-						path.moveTo(p.x, p.y);
+						if (vf.type === 1) {
+							path.arc(p.x, p.y, 5, 0, 2 * Math.PI);
+						} else {
+							path.moveTo(p.x, p.y);
+						}
 					}
 				});
 				t[k].features.push({type: vf.type, path});							
@@ -58,52 +62,56 @@ async function getTiles (zoom, bbox, bounds) {
 		abortController.abort();
 	}
 	abortController = new AbortController();	
-	const boxTiles = await getBoxTiles(abortController.signal, bbox);	
-	const promisesByLayers = {};
-	boxTiles.forEach(({layerId, tiles}) => {		
-		let data = promisesByLayers[layerId] || {};
-		let arr = data.promises || [];
-		for (const {z,x,y} of tiles) {
+	const layersArr = await getBoxTiles(abortController.signal, bbox);
+	layersArr.forEach(layerItem => {
+		const {layerId, tiles} = layerItem;
+		if (!layerId) {
+			return;
+		}
+		const promisesByLayers = {};
+		tiles.forEach(({z, x, y}) => {		
+			let data = promisesByLayers[layerId] || {};
+			let arr = data.promises || [];
 			arr.push(getTilePromise(layerId, z, x, y));
-		}	
-		data.promises = arr;
-		// let tiles = data.tiles || [];
-		// tiles.push(it);
-		data.tiles = tiles;
-		promisesByLayers[layerId] = data;
-	});
-	Object.keys(promisesByLayers).forEach(layerId => {
-		const pt = promisesByLayers[layerId];
-		const promises = pt.promises;
-		const ctx = canvas.getContext("2d");
-		ctx.resetTransform();
-		ctx.clearRect(0, 0, canvas.width, canvas.height);	
-	
-		Promise.all(promises)
-		.then(tiles => {		
-			tiles.forEach(layers => {
-				Object.keys(layers).forEach(k => {
-					const {features, x, y, z, extent} = layers[k];				
-					const tw = 1 << (8 + zoom - z);
-					let x0 = x * tw - bounds.min.x;
-					if (x0 + tw < 0) {
-						x0 += Math.pow(2, z) * tw;
-					}
-					const y0 = y * tw - bounds.min.y;
-					ctx.resetTransform();
-					const sc = tw / extent;				
-					ctx.transform(sc, 0, 0, sc, x0, y0);
-					features.forEach(feature => {
-						if (feature.type === 3) {															
-							Renderer.renderPath(ctx, feature.path);
-						}
-					});
-				});
-			});		
-			bitmapToMain(layerId, canvas);
-		})
-		.catch(() => {});
+			data.promises = arr;
+			// let tiles = data.tiles || [];
+			// tiles.push(it);
+			data.tiles = tiles;
+			promisesByLayers[layerItem.layerId] = data;
+		});
+		Object.keys(promisesByLayers).forEach(layerId => {
+			const pt = promisesByLayers[layerId];
+			const promises = pt.promises;
+			const ctx = canvas.getContext("2d");
+			ctx.resetTransform();
+			ctx.clearRect(0, 0, canvas.width, canvas.height);	
 		
+			Promise.all(promises)
+			.then(tiles => {		
+				tiles.forEach(layers => {
+					Object.keys(layers).forEach(k => {
+						const {features, x, y, z, extent} = layers[k];				
+						const tw = 1 << (8 + zoom - z);
+						let x0 = x * tw - bounds.min.x;
+						if (x0 + tw < 0) {
+							x0 += Math.pow(2, z) * tw;
+						}
+						const y0 = y * tw - bounds.min.y;
+						ctx.resetTransform();
+						const sc = tw / extent;				
+						ctx.transform(sc, 0, 0, sc, x0, y0);
+						features.forEach(feature => {
+							// if (feature.type === 3) {
+								Renderer.renderPath(ctx, feature.path);
+							// }
+						});
+					});
+				});		
+				bitmapToMain(layerId, canvas);
+			})
+			.catch(() => {});
+			
+		});
 	});
 }
 
