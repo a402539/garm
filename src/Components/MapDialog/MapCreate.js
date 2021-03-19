@@ -1,20 +1,19 @@
 import './MapCreate.css';
-import {Dialog} from '@scanex/components';
-import Translation from '@scanex/translations';
+import {Dialog, Translation} from '@scanex/components';
 import en from './strings.en.json';
 import ru from './strings.ru.json';
 
-Translation.addText('en', en);
-Translation.addText('ru', ru);
+Translation.add('en', en);
+Translation.add('ru', ru);
 
-const translate = Translation.getText.bind(Translation);
+const translate = Translation.translate;
 
 export default class MapCreate extends Dialog {
     constructor() {
         super({title: translate('dialog.map.create'), id: 'dlg', collapsible: false, modal: false, top: 200, left: 400});
     }
-    _render(element, options) {
-        super._render(element, options);
+    render(element, options) {
+        super.render(element, options);
         this.content.innerHTML = `<div>
             <label>${translate('dialog.map.name')}</label>
             <input class="name" type="text" value="" />

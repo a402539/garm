@@ -1,21 +1,20 @@
-import {Controller} from '@scanex/components';
+import {Controller, Translation} from '@scanex/components';
 import * as LayerDialog from '../LayerDialog/index.js';
 import List from '../List/List.js';
-import Translation from '@scanex/translations';
 import en from './strings.en.json';
 import ru from './strings.ru.json';
 
-Translation.addText('en', en);
-Translation.addText('ru', ru);
+Translation.add('en', en);
+Translation.add('ru', ru);
 
-const translate = Translation.getText.bind(Translation);
+const translate = Translation.translate;
 
 export default class LayersController extends Controller {
     constructor() {
         super();
     }
     async create() {
-        const dlg = new LayerDialog.Create();
+        let dlg = new LayerDialog.Create();
         dlg.on('close', () => {
             dlg.destroy();
             dlg = null;

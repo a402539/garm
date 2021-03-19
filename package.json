@@ -18,6 +18,7 @@
     "@rollup/plugin-commonjs": "^17.1.0",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^11.2.0",
+    "core-js": "^3.9.1",
     "http-server": "^0.12.3",
     "leaflet": "^1.7.1",
     "mini-svg-data-uri": "^1.2.3",
@@ -29,7 +30,6 @@
   },
   "dependencies": {
     "@scanex/components": "git+https://github.com/Scanex/Components.git",
-    "@scanex/evented": "git+https://github.com/Scanex/Evented.git",
-    "@scanex/translations": "git+https://github.com/Scanex/Translations.git"
+    "@scanex/evented": "git+https://github.com/Scanex/Evented.git"
   }
 }

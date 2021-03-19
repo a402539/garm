@@ -6,7 +6,7 @@ export default class Map extends Component {
     constructor(container, options) {
         super(container, options);        
     }
-    _render(element, options) {
+    render(element, options) {
         element.classList.add('map');
         this._options = options;
         const {center = [55.751357, 37.618968], zoom = 10} = this._options;

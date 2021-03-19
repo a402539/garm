@@ -1,7 +1,13 @@
-.list-item.layer-list-item {
+.scanex-component-list .layer-list-item {
     padding: 10px;    
 }
-.list-item.layer-list-item > * {
+.scanex-component-list .layer-list-item > * {
     margin-right: 10px;
-    cursor: pointer;
+    cursor: pointer;    
+}
+.scanex-component-list .layer-list-item > .layer-id {
+    width: 200px;
+}
+.scanex-component-list .layer-list-item > .layer-name {
+    width: 150px;
 }

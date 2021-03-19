@@ -22,8 +22,13 @@ export default [
             commonjs(),
             json(),
             css({dest: 'wwwroot/main.css', minified: false}),
-            babel({babelHelpers: 'bundled'}),
-            terser(),
+            babel({    
+                babelHelpers: 'bundled',            
+                extensions: ['.js', '.mjs'],
+                exclude: ['node_modules/@babel/**', 'node_modules/core-js/**'],
+                include: ['src/**', 'node_modules/**']
+            }),
+            // terser(),
         ],
     }, 
     {
@@ -38,10 +43,15 @@ export default [
             },
         },
         plugins: [                      
-            resolve({moduleDirectories: ['node_modules', 'src']}),
+            resolve({moduleDirectories: ['node_modules', 'src']}),            
             commonjs(),
             json(),
-            babel({babelHelpers: 'bundled'}),
+            babel({    
+                babelHelpers: 'bundled',            
+                extensions: ['.js', '.mjs'],
+                exclude: ['node_modules/@babel/**', 'node_modules/core-js/**'],
+                include: ['src/**', 'node_modules/**']
+            }),
         ],
     },       
 ];

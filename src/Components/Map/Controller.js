@@ -1,15 +1,14 @@
-import {Controller} from '@scanex/components';
+import {Controller, Translation} from '@scanex/components';
 import CanvasLayer from 'CanvasLayer.js';
 import * as MapDialog from 'Components/MapDialog/index.js';
 import Map from './Map.js';
-import Translation from '@scanex/translations';
 import en from './strings.en.json';
 import ru from './strings.ru.json';
 
-Translation.addText('en', en);
-Translation.addText('ru', ru);
+Translation.add('en', en);
+Translation.add('ru', ru);
 
-const translate = Translation.getText.bind(Translation);
+const translate = Translation.translate;
 
 export default class MapController extends Controller {
     constructor({container}) {

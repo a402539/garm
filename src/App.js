@@ -1,15 +1,14 @@
 import './App.css';
-import 'icons.css';
-import {Menu, Sidebar, Controller, Notification} from '@scanex/components';
+import './icons.css';
+import {Menu, Sidebar, Controller, Notification, Translation} from '@scanex/components';
 import * as Components from 'Components/index.js';
-import Translation from '@scanex/translations';
 import en from './strings.en.json';
 import ru from './strings.ru.json';
 
-Translation.addText('en', en);
-Translation.addText('ru', ru);
+Translation.add('en', en);
+Translation.add('ru', ru);
 
-const translate = Translation.getText.bind(Translation);
+const translate = Translation.translate;
 
 export default class AppController extends Controller {
     constructor(container) {

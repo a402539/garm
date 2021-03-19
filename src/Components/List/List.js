@@ -17,7 +17,7 @@ export default class List extends Component {
             return item;
         });
     }
-    _render(element) {
+    render(element) {
         element.classList.add('scanex-component-list');
     }
 };
