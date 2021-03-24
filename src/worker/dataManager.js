@@ -6,6 +6,8 @@ let canvas;
 let abortController;
 let visibleLayers = {};
 let cwidth, cheight;
+let renderNum = 0;
+let moveendNum = 0;
 
 async function getBoxTiles(signal, bbox) {
 	const [xmin, ymin, xmax, ymax] = bbox;	
@@ -68,6 +70,7 @@ function getTilePromise (layerId, z, x, y) {
 }
 
 async function getTiles (zoom, bbox, bounds) {	
+	moveendNum++;
 	if (abortController) {
 		abortController.abort();
 	}
@@ -96,33 +99,44 @@ async function getTiles (zoom, bbox, bounds) {
 
 		let tm = Date.now();
 		let cnt = 0;
-		Promise.all(Object.values(promises))
-		.then(tiles => {		
-			tiles.forEach(tile => {
-				const {layers, x, y, z, extent, path1} = tile;
-				const tw = 1 << (8 + zoom - z);
-				let x0 = x * tw - bounds.min.x;
-				if (x0 + tw < 0) {
-					x0 += Math.pow(2, z) * tw;
-				}
-				const y0 = y * tw - bounds.min.y;
-				ctx.resetTransform();
-				const sc = tw / extent;				
-				ctx.transform(sc, 0, 0, sc, x0, y0);
-				ctx.lineWidth = 1 / sc;
-				Object.keys(layers).forEach(k => {
-					const {features} = layers[k];
-					features.forEach(feature => {
-						Renderer.renderPath(ctx, feature);
-						cnt++;
+		// Promise.all(Object.values(promises))
+			// promise.then(tiles => {		
+				// tiles.forEach(tile => {
+		Object.values(promises).forEach(promise => {
+			promise.then(tile => {		
+				// if (renderNum === moveendNum) {
+					const {layers, x, y, z, extent, path1} = tile;
+					const tw = 1 << (8 + zoom - z);
+					let x0 = x * tw - bounds.min.x;
+					if (x0 + tw < 0) {
+						x0 += Math.pow(2, z) * tw;
+					}
+					const y0 = y * tw - bounds.min.y;
+					ctx.resetTransform();
+					const sc = tw / extent;				
+					ctx.transform(sc, 0, 0, sc, x0, y0);
+					ctx.lineWidth = 1 / sc;
+					Object.keys(layers).forEach(k => {
+						const {features} = layers[k];
+						features.forEach(feature => {
+							Renderer.renderPath(ctx, feature);
+							cnt++;
+						});
 					});
-				});
-			});		
-			// console.log('parse pbf tm:', cnt, Date.now() - tm);
-			bitmapToMain(layerId, canvas);
-			// console.log('tm:', Date.now() - tm);
-		})
-		.catch(() => {});
+					// });		
+					console.log('tile tm:', x, y, z, Date.now() - tm);
+					// bitmapToMain(layerId, canvas);
+					// console.log('tm:', Date.now() - tm);
+				// } else {
+					// console.log('----- отмена rendering:', renderNum, moveendNum, layerId, x, y, z);
+				// }
+				
+			})
+			.catch(() => {});
+		});
+		renderNum++;
+		console.log('layer tm:', renderNum, cnt, Date.now() - tm);
+		bitmapToMain(layerId, canvas);
 	});
 }
 
