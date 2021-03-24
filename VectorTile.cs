@@ -40,36 +40,21 @@ namespace garm
             var file = Path.ChangeExtension(Path.Combine(path, y.ToString()), ".pbf");            
             
             try {
-
                 if (File.Exists(file)) {
                     byte[] mvt = await File.ReadAllBytesAsync(file);
                     context.Response.ContentType = "application/octet-stream";
                     await context.Response.Body.WriteAsync(mvt, 0, mvt.Length);
                 }
-                else {
-                    await using var conn = new NpgsqlConnection(Configuration.GetConnectionString("Default"));
-                    await conn.OpenAsync();
-                    
-                    await using (var cmd = new NpgsqlCommand("SELECT geo.mvt_tile(@layerid, @z, @x, @y)", conn))
-                    {
-                        cmd.Parameters.AddWithValue("layerid", new Guid(layerId));
-                        cmd.Parameters.AddWithValue("z", z);
-                        cmd.Parameters.AddWithValue("x", x);
-                        cmd.Parameters.AddWithValue("y", y);                        
-                        var p = new NpgsqlParameter("mvt", DbType.Binary) { Direction = ParameterDirection.Output };
-                        cmd.Parameters.Add(p);
-
-                        await cmd.ExecuteNonQueryAsync();
-                        byte[] mvt = p.Value as byte[];
-                        context.Response.ContentType = "application/octet-stream";
-                        if (mvt != null) {
-                            await File.WriteAllBytesAsync(file, mvt);
-                            await context.Response.Body.WriteAsync(mvt, 0, mvt.Length);                        
-                        }
-                        else {
-                            await context.Response.Body.WriteAsync(new byte[] {}, 0, 0);
-                        }                                                
+                else {                                        
+                    byte[] mvt = await GetMVT(new Guid(layerId), z, x, y);
+                    context.Response.ContentType = "application/octet-stream";
+                    if (mvt != null) {
+                        await File.WriteAllBytesAsync(file, mvt);
+                        await context.Response.Body.WriteAsync(mvt, 0, mvt.Length);                        
                     }
+                    else {
+                        await context.Response.Body.WriteAsync(new byte[] {}, 0, 0);
+                    } 
                 }                         
             }
             catch (Exception e) {
@@ -78,10 +63,26 @@ namespace garm
             }                                
         }
 
+        async Task<byte[]> GetMVT (Guid layerId, int z, int x, int y) {
+            await using var conn = new NpgsqlConnection(Configuration.GetConnectionString("Default"));
+            await conn.OpenAsync();
+            
+            await using (var cmd = new NpgsqlCommand("SELECT geo.get_mvt(@layerid, @z, @x, @y)", conn))
+            {
+                cmd.Parameters.AddWithValue("layerid", layerId);
+                cmd.Parameters.AddWithValue("z", z);
+                cmd.Parameters.AddWithValue("x", x);
+                cmd.Parameters.AddWithValue("y", y);                
+
+                return await cmd.ExecuteScalarAsync() as byte[];                
+            }
+        }
+
         public static bool IsValid(string path) {
             return _rxValid.IsMatch(path);
         }
     }
+    
 
     public static class VectorTileExtensions
     {

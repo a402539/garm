@@ -3,7 +3,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import css from 'rollup-plugin-css-porter';
 import json from '@rollup/plugin-json';
 import resolve from '@rollup/plugin-node-resolve';
-import {terser} from 'rollup-plugin-terser';
+// import {terser} from 'rollup-plugin-terser';
 
 export default [
     {
