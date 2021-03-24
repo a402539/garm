@@ -18,12 +18,18 @@ export default class MapController extends Controller {
         this._dataManager.onmessage = msg => {
             // console.log('Main dataManager', msg.data);
            const data = msg.data || {};
-           const {cmd, layerId, tileKey} = data;
+           const {cmd, layerId, items} = data;
            switch(cmd) {
                case 'rendered':
-                   if (data.bitmap && this._layers[layerId]) {
+                   if (this._layers[layerId]) {
                        this._layers[layerId].rendered(data.bitmap);
                    }
+                   break;
+               case 'mouseover':
+					this._map._map.getContainer().style.cursor = items ? 'pointer' : '';
+					if (this._layers[layerId]) {
+						this._layers[layerId].mouseOver(items);
+					}
                    break;
                default:
                    console.warn(translate('worker.message.bad'), data);
@@ -32,6 +38,10 @@ export default class MapController extends Controller {
         };
         this._map.on('moveend', e => {
             const msg = {...e.detail, cmd: 'moveend'};
+            this._dataManager.postMessage(msg);
+        });
+        this._map.on('eventCheck', e => {
+            const msg = {...e.detail, cmd: 'eventCheck'};
             this._dataManager.postMessage(msg);
         });
     }
