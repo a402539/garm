@@ -6,12 +6,90 @@ CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
 
-CREATE IF NOT EXISTS TABLE geo.tiles (
+-- TABLES
+
+CREATE TABLE IF NOT EXISTS geo.features (
+    layer_id uuid NOT NULL,
+    feature_id uuid NOT NULL,
+    feature_geometry public.geometry NOT NULL	
+)
+PARTITION BY LIST (layer_id);
+
+CREATE TABLE IF NOT EXISTS geo.maps (
+    map_id uuid,
+    map_name text
+);
+
+CREATE TABLE IF NOT EXISTS geo.layers (
+    layer_id uuid,
+    layer_name text,
+    visible boolean NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS geo.map_layer (
+    map_id uuid NOT NULL,
+    layer_id uuid NOT NULL	
+);
+
+CREATE TABLE IF NOT EXISTS geo.tiles (
     layer_id uuid NOT NULL,
     x integer NOT NULL,
     y integer NOT NULL,
     z integer NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS geo.tiles_count (
+    layer_id uuid NOT NULL,
+    x integer NOT NULL,
+    y integer NOT NULL,
+    z integer NOT NULL,
+    n integer NOT NULL
+);
+
+-- CONSTRAINTS
+
+ALTER TABLE geo.features DROP CONSTRAINT IF EXISTS "PK_features";
+ALTER TABLE geo.features ADD CONSTRAINT "PK_features" PRIMARY KEY (layer_id, feature_id);
+
+ALTER TABLE geo.maps DROP CONSTRAINT IF EXISTS "PK_maps";
+ALTER TABLE geo.maps ADD CONSTRAINT "PK_maps" PRIMARY KEY (map_id);
+
+ALTER TABLE geo.layers DROP CONSTRAINT IF EXISTS "PK_layers";
+ALTER TABLE geo.layers ADD CONSTRAINT "PK_layers" PRIMARY KEY (layer_id);
+
+ALTER TABLE geo.map_layer DROP CONSTRAINT IF EXISTS "PK_map_layer";
+ALTER TABLE geo.map_layer ADD CONSTRAINT "PK_map_layer" PRIMARY KEY (map_id, layer_id);
+
+ALTER TABLE geo.tiles DROP CONSTRAINT IF EXISTS "PK_tiles";
+ALTER TABLE geo.tiles ADD CONSTRAINT "PK_tiles" PRIMARY KEY (layer_id, x, y, z);
+
+ALTER TABLE geo.tiles_count DROP CONSTRAINT IF EXISTS "PK_tiles_count";
+ALTER TABLE geo.tiles_count ADD CONSTRAINT "PK_tiles_count" PRIMARY KEY (layer_id, x, y, z);
+
+ALTER TABLE geo.features DROP CONSTRAINT IF EXISTS "FK_features_layer";
+ALTER TABLE geo.features ADD CONSTRAINT "FK_features_layer" FOREIGN KEY (layer_id) REFERENCES geo.layers(layer_id);
+
+ALTER TABLE ONLY geo.map_layer DROP CONSTRAINT IF EXISTS "FK_map_layer_layer";	
+ALTER TABLE ONLY geo.map_layer ADD CONSTRAINT "FK_map_layer_layer" FOREIGN KEY (layer_id) REFERENCES geo.layers(layer_id) ON DELETE CASCADE;
+	
+ALTER TABLE ONLY geo.map_layer DROP CONSTRAINT IF EXISTS "FK_map_layer_map";
+ALTER TABLE ONLY geo.map_layer ADD CONSTRAINT "FK_map_layer_map" FOREIGN KEY (map_id) REFERENCES geo.maps(map_id) ON DELETE CASCADE;
+	
+ALTER TABLE ONLY geo.tiles_count DROP CONSTRAINT IF EXISTS "FK_tiles_count_layer";
+ALTER TABLE ONLY geo.tiles_count ADD CONSTRAINT "FK_tiles_count_layer" FOREIGN KEY (layer_id) REFERENCES geo.layers(layer_id);
+	
+ALTER TABLE ONLY geo.tiles DROP CONSTRAINT IF EXISTS "FK_tiles_layer";
+ALTER TABLE ONLY geo.tiles ADD CONSTRAINT "FK_tiles_layer" FOREIGN KEY (layer_id) REFERENCES geo.layers(layer_id);
+
+-- INDICES
+
+CREATE INDEX IF NOT EXISTS "IX_features_layer" ON ONLY geo.features USING btree (layer_id);
+CREATE INDEX IF NOT EXISTS "IX_map_layer" ON geo.map_layer USING btree (map_id, layer_id);
+CREATE INDEX IF NOT EXISTS "IX_features_geometry" ON ONLY geo.features USING gist (feature_geometry);
+CREATE INDEX IF NOT EXISTS "IX_tiles_layer" ON ONLY geo.tiles USING btree(layer_id);
+CREATE INDEX IF NOT EXISTS "IX_tiles_count_layer" ON ONLY geo.tiles_count USING btree(layer_id);
+
+-- FUNCTIONS
 
 CREATE OR REPLACE FUNCTION geo.get_box_tiles(layers uuid[], xmin double precision, ymin double precision, xmax double precision, ymax double precision) RETURNS SETOF geo.tiles
     LANGUAGE plpgsql STABLE LEAKPROOF PARALLEL SAFE
@@ -160,7 +238,7 @@ CREATE OR REPLACE FUNCTION geo.update_tile_count(layerid uuid, zmax integer) RET
     LANGUAGE plpgsql
     AS $$
 BEGIN
-	DELETE FROM geo.tiles_count A WHERE A.layer_id = layerid;	
+	DELETE FROM geo.tiles_count A WHERE A.layer_id = layerid;
 	INSERT INTO geo.tiles_count
 	SELECT layerid, B.x, B.y, B.z, count(A.feature_id)
 	FROM geo.features A, UNNEST(geo.get_tiles(A.feature_geometry, 0, zmax)) B
@@ -177,64 +255,12 @@ CREATE OR REPLACE FUNCTION geo.update_tiles(layerid uuid, zmax integer, threshol
 	SELECT A.* FROM UNNEST (geo.get_optimized_tiles(layerid, NULL, NULL, 0, zmax, threshold)) A;
 $$;
 
-CREATE IF NOT EXISTS TABLE geo.features (
-    layer_id uuid NOT NULL,
-    feature_id uuid NOT NULL,
-    feature_geometry public.geometry NOT NULL
-)
-PARTITION BY LIST (layer_id);
+-- TRIGGERS
 
-CREATE IF NOT EXISTS TABLE geo.layers (
-    layer_id uuid NOT NULL,
-    layer_name text,
-    visible boolean NOT NULL
-);
-
-CREATE IF NOT EXISTS TABLE geo.map_layer (
-    map_id uuid NOT NULL,
-    layer_id uuid NOT NULL
-);
-
-CREATE IF NOT EXISTS TABLE geo.maps (
-    map_id uuid NOT NULL,
-    map_name text
-);
-
-CREATE IF NOT EXISTS TABLE geo.tiles_count (
-    layer_id uuid NOT NULL,
-    x integer NOT NULL,
-    y integer NOT NULL,
-    z integer NOT NULL,
-    n integer NOT NULL
-);
-
-ALTER TABLE ONLY geo.layers ADD CONSTRAINT "PK_layers" PRIMARY KEY (layer_id);
-ALTER TABLE ONLY geo.map_layer ADD CONSTRAINT "PK_map_layer" PRIMARY KEY (map_id, layer_id);
-ALTER TABLE ONLY geo.maps ADD CONSTRAINT "PK_maps" PRIMARY KEY (map_id);
-ALTER TABLE ONLY geo.tiles ADD CONSTRAINT "PK_tiles" PRIMARY KEY (layer_id, x, y, z);
-ALTER TABLE ONLY geo.tiles_count ADD CONSTRAINT "PK_tiles_count" PRIMARY KEY (layer_id, x, y, z);
-ALTER TABLE ONLY geo.features ADD CONSTRAINT features_pkey PRIMARY KEY (layer_id, feature_id);
-
-CREATE INDEX "IX_map_layer_layer_id" ON geo.map_layer USING btree (layer_id);
-CREATE INDEX features_layer_idx ON ONLY geo.features USING btree (layer_id);
-CREATE INDEX features_geom_idx ON ONLY geo.features USING gist (feature_geometry);
-
-CREATE TRIGGER update_layer AFTER INSERT OR DELETE ON geo.layers FOR EACH ROW EXECUTE FUNCTION geo.update_layer();
-
-ALTER TABLE ONLY geo.map_layer
-    ADD CONSTRAINT "FK_map_layer_layers_layer_id" FOREIGN KEY (layer_id) REFERENCES geo.layers(layer_id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY geo.map_layer
-    ADD CONSTRAINT "FK_map_layer_maps_map_id" FOREIGN KEY (map_id) REFERENCES geo.maps(map_id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY geo.tiles_count
-    ADD CONSTRAINT "FK_tiles_count_layers_layer_id" FOREIGN KEY (layer_id) REFERENCES geo.layers(layer_id) ON DELETE CASCADE;
-
-ALTER TABLE geo.features
-    ADD CONSTRAINT features_layer_id_fk FOREIGN KEY (layer_id) REFERENCES geo.layers(layer_id);
-
-ALTER TABLE ONLY geo.tiles_count
-    ADD CONSTRAINT tiles_count_layer_id_fk FOREIGN KEY (layer_id) REFERENCES geo.layers(layer_id);
-
-ALTER TABLE ONLY geo.tiles
-    ADD CONSTRAINT tiles_layer_id_fk FOREIGN KEY (layer_id) REFERENCES geo.layers(layer_id);
+DO $$
+BEGIN
+IF NOT EXISTS (SELECT * FROM pg_trigger WHERE tgname = 'update_layer') THEN
+	CREATE TRIGGER update_layer AFTER INSERT OR DELETE ON geo.layers FOR EACH ROW EXECUTE FUNCTION geo.update_layer();
+END IF;
+END;
+$$ LANGUAGE 'plpgsql';

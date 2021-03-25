@@ -66,13 +66,14 @@ namespace garm
         async Task<byte[]> GetMVT (Guid layerId, int z, int x, int y) {
             await using var conn = new NpgsqlConnection(Configuration.GetConnectionString("Default"));
             await conn.OpenAsync();
-            
-            await using (var cmd = new NpgsqlCommand("SELECT geo.get_mvt(@layerid, @z, @x, @y)", conn))
+            string sql = $"SELECT pbf FROM geo.mvt WHERE layer_id = {layerId} AND x = {x} AND y = {y} AND z = {z}";
+            //string sql = "SELECT geo.get_mvt(@layerid, @z, @x, @y)";
+            await using (var cmd = new NpgsqlCommand(sql, conn))
             {
-                cmd.Parameters.AddWithValue("layerid", layerId);
-                cmd.Parameters.AddWithValue("z", z);
-                cmd.Parameters.AddWithValue("x", x);
-                cmd.Parameters.AddWithValue("y", y);                
+                // cmd.Parameters.AddWithValue("layerid", layerId);
+                // cmd.Parameters.AddWithValue("z", z);
+                // cmd.Parameters.AddWithValue("x", x);
+                // cmd.Parameters.AddWithValue("y", y);                
 
                 return await cmd.ExecuteScalarAsync() as byte[];                
             }
