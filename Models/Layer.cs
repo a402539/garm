@@ -7,6 +7,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace garm.Models {
 
+    public enum LayerType {  Canvas, Grid };
+
     [Table("layers", Schema = "geo")]
     public class Layer {
         [Key]
@@ -16,8 +18,13 @@ namespace garm.Models {
         DateTime Created { get; set; }
         [Column("layer_name")]
         public string Name { get; set; }
+
+        [Column("layer_type")]
+        public LayerType Type { get; set; }
+
         [Column("visible")]
-        public bool Visible { get; set; }        
+        public bool Visible { get; set; }
+
         public ICollection<Map> Maps { get; set; }
         public List<MapLayer> MapLayers { get; set; }
     }

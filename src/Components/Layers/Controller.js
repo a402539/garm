@@ -20,9 +20,9 @@ export default class LayersController extends Controller {
             dlg = null;
         });
         dlg.on('ok', async e => {            
-            const {ok, result} = await this._httpPost('layers', {name: dlg.name});
+            const {ok, result} = await this._httpPost('layers', {name: dlg.name, type: dlg.type});
             if (ok) {
-                const {id, name, visible} = result;
+                const {id, name, type, visible} = result;
             }
             dlg.destroy();
             dlg = null;

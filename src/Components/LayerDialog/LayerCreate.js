@@ -17,8 +17,16 @@ export default class LayerCreate extends Dialog {
         this.content.innerHTML = `<div>
             <label>${translate('dialog.layer.name')}</label>
             <input class="name" type="text" value="" />
+        </div>
+        <div>
+            <label>${translate('dialog.layer.type.title')}</label>
+            <select class="type">
+                <option value="0">${translate('dialog.layer.type.canvas')}</option>
+                <option value="1">${translate('dialog.layer.type.grid')}</option>
+            </select>
         </div>`;
         this._name = this.content.querySelector('.name');
+        this._type = this.content.querySelector('.type');
         this.footer.innerHTML = `<button>${translate('dialog.ok')}</button>`;
         this.footer.querySelector('button').addEventListener('click', e => {
             e.stopPropagation();
@@ -29,5 +37,8 @@ export default class LayerCreate extends Dialog {
     }
     get name() {
         return this._name.value;
+    }
+    get type() {
+        return parseInt(this._type.value, 10);
     }
 };
