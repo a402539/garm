@@ -10,8 +10,8 @@ export default class Map extends Component {
         element.classList.add('map');
         this._options = options;
         const {center = [55.751357, 37.618968], zoom = 10} = this._options;
-        this._map = L.map(element, {zoomControl: true}).setView(center, zoom);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        this._map = L.map(element, {zoomControl: false}).setView(center, zoom);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {            
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',            
         }).addTo(this._map);
         
@@ -62,5 +62,13 @@ export default class Map extends Component {
     }    
     addLayer(layer) {
         layer.addTo(this._map);
-    }    
+    } 
+    expand() {
+        this.element.classList.remove('collapsed');
+        this.element.classList.add('expanded');
+    }
+    collapse() {
+        this.element.classList.remove('expanded');
+        this.element.classList.add('collapsed');
+    }   
 };

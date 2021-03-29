@@ -1,0 +1,7 @@
+{
+    "worker": {
+        "message": {
+            "bad":"Bad message"
+        }
+    }
+}

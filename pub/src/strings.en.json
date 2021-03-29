@@ -1,0 +1,36 @@
+{
+    "menu": {
+        "map": {
+            "title": "Map",
+            "create": "New",
+            "open": "Open",
+            "save": "Save"
+        },
+        "layer": {
+            "title": "Layer",
+            "create": "New",
+            "open": "Open",
+            "save": "Save"
+        }
+    },    
+    "dialog": {
+        "map": {
+            "create": "Create map",
+            "open": "Open map"
+        },
+        "layer": {
+            "create": "Create layer",
+            "open": "Open layer"
+        },
+        "maximize": "Maximize",
+        "minimize": "Minimize",
+        "close": "Close",
+        "ok": "OK",
+        "cancel": "Cancel"
+    },
+    "sidebar": {
+        "map": {
+            "title": "Map"
+        }
+    }
+}

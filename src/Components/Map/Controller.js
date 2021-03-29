@@ -54,7 +54,7 @@ export default class MapController extends Controller {
         dlg.on('ok', async e => {                        
             dlg.destroy();
             dlg = null;
-            const {ok, result} = await this._httpPost({name: dlg.name});
+            const {ok, result} = await this._httpPost('maps',{name: dlg.name});
             if (ok) {
                 const {id, name, layers} = result;            
             }            
@@ -71,10 +71,11 @@ export default class MapController extends Controller {
                         dlg = null;
                         reject();
                     });
-                    dlg.on('select', async e => {                            
-                        this._mapInfo = e.detail;
+                    dlg.on('select', async e => {                                                    
                         dlg.destroy();
                         dlg = null;
+                        this._mapInfo = e.detail;
+                        this.clear();
                         Array.isArray(this._mapInfo.layers) && this._mapInfo.layers.forEach(layer => {
                             layer.visible = true;
                             this.addLayer(layer);
@@ -90,13 +91,24 @@ export default class MapController extends Controller {
         });              
     }
     async save() {
-
-    }   
+        await this._httpPut('maps', this._mapInfo);        
+    }
+    clear() {
+        Object.keys(this._layers).forEach(id => {
+            this._map.removeLayer(this._layers[id]);
+        });   
+    }      
     addLayer(layer) {        
         const c = new CanvasLayer({dataManager: this._dataManager, layerId: layer.id});
         this._layers[layer.id] = c;        
         if (layer.visible) {
             this._map.addLayer(c);
-        }        
+        }
+    }
+    expand() {
+        this._map.expand();
+    }
+    collapse() {
+        this._map.collapse();
     }
 };

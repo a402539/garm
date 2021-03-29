@@ -27,5 +27,10 @@
         "close": "Close",
         "ok": "OK",
         "cancel": "Cancel"
+    },
+    "sidebar": {
+        "map": {
+            "title": "Map"
+        }
     }
 }

@@ -1,4 +1,6 @@
 import {Component, Translation} from '@scanex/components';
+import LayerInfo from '../LayerInfo/LayerInfo.js';
+
 import en from './strings.en.json';
 import ru from './strings.ru.json';
 
@@ -13,6 +15,7 @@ export default class MapInfo extends Component {
     }    
     render(element, options) {
         const {id, name} = options;
+        this._layers = {};
         element.innerHTML = `<div>
             <label>${translate('info.map.id')}</label>
             <label>${id}</label>
@@ -20,6 +23,12 @@ export default class MapInfo extends Component {
         <div>
             <label>${translate('info.map.name')}</label>
             <label>${name}</label>
-        </div>`;
+        </div>
+        <div class="layers"></div>`;
+        this._layersContainer = element.querySelector('.layers');
+    }
+    addLayer(layer) {
+        this._layers[layer.id] && this._layers[layer.id].destroy();
+        this._layers[layer.id] = new LayerInfo(this._layersContainer, layer);
     }
 };

@@ -4,6 +4,7 @@ import {Menu, Sidebar, Controller, Notification, Translation} from '@scanex/comp
 import * as Components from 'Components/index.js';
 import en from './strings.en.json';
 import ru from './strings.ru.json';
+import MapInfo from './Components/MapInfo/MapInfo';
 
 Translation.add('en', en);
 Translation.add('ru', ru);
@@ -18,8 +19,7 @@ export default class AppController extends Controller {
         this._container.innerHTML = `<div class="app">
             <div class="header"></div>
             <div class="content"></div>
-        </div>`;
-        this._mapInfo = {};
+        </div>`;        
         const headerContainer = this._container.querySelector('.header');
         
         let mapMenu = new Menu(headerContainer, {id: 'map', title: translate('menu.map.title')});                
@@ -37,13 +37,22 @@ export default class AppController extends Controller {
 
         const contentContainer = this._container.querySelector('.content');
         this._sidebar = new Sidebar(contentContainer);
+        this._sidebar.on('tab:click', () => {
+            if (this._sidebar.current) {
+                this._controllers.map.expand();
+            }
+            else {
+                this._controllers.map.collapse();
+            }            
+        });
         this._controllers = {};
-        this._controllers.map = new Components.Map({container: contentContainer}); // map controller        
+        this._controllers.map = new Components.Map({container: contentContainer}); // map controller         
         this._controllers.layers = new Components.Layers({container: contentContainer}); // layers controller
         this._controllers.layers.on('open', e => {
             let layer = e.detail;
             layer.visible = true;
-            this._controllers.map.addLayer(layer);
+            this._controllers.map.addLayer(layer);            
+            this._mapInfo && this._mapInfo.addLayer(layer);
         });
         
         Object.keys(this._controllers).forEach(k => {
@@ -84,9 +93,21 @@ export default class AppController extends Controller {
         await this._controllers.map.create();
     }
 
-    _openMap() {        
-        this._controllers.map.open().then(mapInfo => {            
-        });
+    async _openMap() {        
+        const data = await this._controllers.map.open();
+        if (data) {
+            let panel = this._sidebar.getPanelContainer('map');
+            const {id, name} = data;
+            if (!panel) {                
+                panel = this._sidebar.add('map', translate('sidebar.map.title'));
+                this._controllers.map.collapse();
+                this._mapInfo = new MapInfo(panel, {id, name});
+            }
+            else if (this._mapInfo) {
+                this._mapInfo.destroy();
+                this._mapInfo = new MapInfo(panel, {id, name});
+            }
+        }
     }
 
     async _saveMap() {
@@ -98,6 +119,9 @@ export default class AppController extends Controller {
     }
 
     async _openLayer() {
-        await this._controllers.layers.open(); 
+        const data = await this._controllers.layers.open();
+        if (data && this._mapInfo) {                                           
+            this._mapInfo.addLayer(data);            
+        }
     }
 };

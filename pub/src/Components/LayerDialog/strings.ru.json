@@ -1,0 +1,12 @@
+{
+    "dialog": {
+        "layer": {
+            "name": "Название",
+            "type": {
+                "title": "Тип",
+                "canvas": "Canvas",
+                "grid": "Grid"
+            }
+        }    
+    }
+}

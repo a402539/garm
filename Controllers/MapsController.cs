@@ -56,6 +56,42 @@ namespace garm.Controllers
             return CreatedAtAction("CreateMap", new { id = map.Id }, map);
         }
 
+        [HttpPut("{id}")]
+        [Consumes(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<Map>> SaveMap(Guid id, Map map)
+        {                                    
+            if (id != map.Id)
+            {
+                return BadRequest();
+            }
+
+            _context.Entry(map).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                return CreatedAtAction("SavedMap", new { id = map.Id }, map);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!MapExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }            
+        }
+
+        private bool MapExists(Guid id)
+        {
+            return _context.Maps.Any(e => e.Id == id);
+        }
+
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Map))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

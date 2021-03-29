@@ -6,7 +6,9 @@
   "scripts": {
     "build": "npm run svg & rollup -c",
     "svg": "node svg.js",
-    "watch": "rollup -c -w"
+    "watch": "rollup -c -w",
+    "dev": "npm-run-all --parallel start watch",
+    "start": "http-server ./wwwroot -c-1 --proxy http://192.168.4.185:5000"
   },
   "author": "liaozhai@github.com",
   "license": "",
