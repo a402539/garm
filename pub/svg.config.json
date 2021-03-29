@@ -1,6 +1,0 @@
-{
-    "src": {    
-        "scanex-component-icon": "svg"
-    },
-    "dst": "src/icons.css"
-}
