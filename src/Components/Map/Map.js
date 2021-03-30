@@ -1,14 +1,38 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {Component} from '@scanex/components';
+import CanvasLayer from 'CanvasLayer.js';
 
 export default class Map extends Component {
     constructor(container, options) {
-        super(container, options);        
+        super(container, options);                
     }
-    render(element, options) {
+    render(element, options) {        
+        this._dataManager = new Worker("dataManager.js");
+        this._dataManager.onmessage = msg => {
+            // console.log('Main dataManager', msg.data);
+           const data = msg.data || {};
+           const {cmd, layerId, items} = data;
+           switch(cmd) {
+               case 'rendered':
+                   if (this._layers[layerId]) {
+                       this._layers[layerId].rendered(data.bitmap);
+                   }
+                   break;
+               case 'mouseover':
+					this._map.getContainer().style.cursor = items ? 'pointer' : '';
+					if (this._layers[layerId]) {
+						this._layers[layerId].mouseOver(items);
+					}
+                   break;
+               default:
+                   console.warn(translate('worker.message.bad'), data);
+                   break;
+           }
+        };
         element.classList.add('map');
         this._options = options;
+        this._layers = {};
         const {center = [55.751357, 37.618968], zoom = 10} = this._options;
         this._map = L.map(element, {zoomControl: false}).setView(center, zoom);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {            
@@ -22,10 +46,8 @@ export default class Map extends Component {
         this._moveend();
     }
     _eventCheck(ev) {
-		const orig = ev.originalEvent;
-        let event = document.createEvent('Event');
-        event.initEvent('eventCheck', false, false);
-        event.detail = {            
+		const orig = ev.originalEvent;        
+        const msg = {            
 			type: ev.type,
 			latlng: ev.latlng,
 			zoom: this._map.getZoom(),
@@ -38,9 +60,10 @@ export default class Map extends Component {
 				shiftKey: orig.shiftKey,
 				clientX: orig.clientX,
 				clientY: orig.clientY
-			}			
-        };
-        this.dispatchEvent(event);
+			},
+            cmd: 'eventCheck',
+        };                
+        this._dataManager.postMessage(msg);
 	}
 
 	_moveend() {
@@ -49,20 +72,27 @@ export default class Map extends Component {
         const sw = bounds.getSouthWest();
         const ne = bounds.getNorthEast();
         const m1 = L.Projection.Mercator.project(L.latLng([sw.lat, sw.lng]));
-        const m2 = L.Projection.Mercator.project(L.latLng([ne.lat, ne.lng]));        
+        const m2 = L.Projection.Mercator.project(L.latLng([ne.lat, ne.lng])); 
 
-        let event = document.createEvent('Event');
-        event.initEvent('moveend', false, false);
-        event.detail = {            
+        const msg = {            
             zoom,
             bbox: [m1.x, m1.y, m2.x, m2.y],
             bounds: this._map.getPixelBounds(),
+            cmd: 'moveend',
         };
-        this.dispatchEvent(event);
+        this._dataManager.postMessage(msg);
     }    
-    addLayer(layer) {
-        layer.addTo(this._map);
-    } 
+    addLayer(layerId) {
+        if (!this._layers[layerId]) {
+            const layer = new CanvasLayer({dataManager: this._dataManager, layerId});
+            this._layers[layerId] = layer;
+            this._map.addLayer(layer);
+        }
+    }
+    removeLayer(layerId) {
+        const layer = this._layers[layerId];
+        layer && this._map.removeLayer(layer);
+    }
     expand() {
         this.element.classList.remove('collapsed');
         this.element.classList.add('expanded');
