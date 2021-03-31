@@ -34,7 +34,14 @@ export default L.Layer.extend({
 		}
 		this._repaint();
 	},
-	onRemove: function(map) {},
+	onRemove: function(map) {
+		this._div.parentNode.removeChild(this._div);
+		this.options.dataManager.postMessage({
+			cmd: 'removeLayer',
+			layerId: this.options.layerId
+		});
+		
+	},
 	mouseOver: function (items) {
 		// console.log('mouseover', items);
 	},

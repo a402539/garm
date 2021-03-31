@@ -84,14 +84,14 @@ export default class Map extends Component {
     }    
     addLayer(layerId) {
         if (!this._layers[layerId]) {
-            const layer = new CanvasLayer({dataManager: this._dataManager, layerId});
+            const layer = new CanvasLayer({dataManager: this._dataManager, layerId, webGL: 'pixi'});
             this._layers[layerId] = layer;
             this._map.addLayer(layer);
         }
     }
     removeLayer(layerId) {
         const layer = this._layers[layerId];
-        layer && this._map.removeLayer(layer);
+        layer && this._map.removeLayer(layer) && delete this._layers[layerId];
     }
     expand() {
         this.element.classList.remove('collapsed');
