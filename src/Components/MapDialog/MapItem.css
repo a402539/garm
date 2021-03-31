@@ -1,7 +1,19 @@
 .map-list-item {
+    --map-list-item-id-width: 315px;
+    --map-list-item-name-width: 80px;
+}
+
+.map-list-item {
     padding: 10px 0px 10px 0px;
     clear: both;
 }
 .map-list-item > * {    
     cursor: pointer;
+    float: left;
+}
+.map-list-item > :nth-child(1) {
+    width: var(--map-list-item-id-width);
+}
+.map-list-item > :nth-child(2) {
+    width: var(--map-list-item-name-width);
 }

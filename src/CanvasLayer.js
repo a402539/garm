@@ -34,6 +34,7 @@ export default L.Layer.extend({
 		}
 		this._repaint();
 	},
+	onRemove: function(map) {},
 	mouseOver: function (items) {
 		// console.log('mouseover', items);
 	},

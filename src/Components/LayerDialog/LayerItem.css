@@ -1,13 +1,19 @@
+.layer-list-item {
+    --layer-list-item-id-width: 315px;
+    --layer-list-item-name-width: 300px;
+}
+
 .scanex-component-list .layer-list-item {
     padding: 10px;    
 }
 .scanex-component-list .layer-list-item > * {
     margin-right: 10px;
-    cursor: pointer;    
+    cursor: pointer;
+    float: left;
 }
 .scanex-component-list .layer-list-item > .layer-id {
-    width: 200px;
+    width: var(--layer-list-item-id-width);
 }
 .scanex-component-list .layer-list-item > .layer-name {
-    width: 150px;
+    width: var(--layer-list-item-name-width);
 }

@@ -16,15 +16,17 @@ export default class LayerOpen extends Dialog {
     }
     render(element, options) {
         super.render(element, options);
-        this._list = new List(this.content, LayerItem);        
-        this._list.on('item:click', e => {            
-            let event = document.createEvent('Event');
-            event.initEvent('select', false, false);
-            event.detail = e.detail;
-            this.dispatchEvent(event);
-        });
+        this._list = new List(this.content, LayerItem);                
     }
     set items (items) {
         this._list.items = items;
+        for (let item of this._list.items) {
+            item.on('item:click', e => {            
+                let event = document.createEvent('Event');
+                event.initEvent('select', false, false);
+                event.detail = e.detail;
+                this.dispatchEvent(event);
+            });
+        }
     }
 };

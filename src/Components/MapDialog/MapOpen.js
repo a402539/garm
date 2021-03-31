@@ -16,16 +16,18 @@ export default class MapOpen extends Dialog {
     }
     render(element, options) {
         super.render(element, options);
-        element.classList.add('map-dialog');
-        this._list = new List(this.content, MapItem);        
-        this._list.on('item:click', e => {            
-            let event = document.createEvent('Event');
-            event.initEvent('select', false, false);
-            event.detail = e.detail;
-            this.dispatchEvent(event);
-        });
+        element.classList.add('map-open');
+        this._list = new List(this.content, MapItem);                
     }
     set items (items) {
         this._list.items = items;
+        for (let item of this._list.items) {
+            item.on('item:click', e => {            
+                let event = document.createEvent('Event');
+                event.initEvent('select', false, false);
+                event.detail = e.detail;
+                this.dispatchEvent(event);
+            });
+        }
     }
 };

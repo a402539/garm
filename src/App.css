@@ -23,7 +23,7 @@ html, body {
     --map-width-initial: 100%;
     --map-width-collapsed: calc(100% - var(--sidebar-width-collapsed));
     --map-width-expanded: calc(100% - var(--sidebar-width-expanded));
-    --menu-item-width: 120px;
+    --menu-item-width: 120px;    
 }
 .app .header {
     height: var(--header-height);  
@@ -67,7 +67,8 @@ html, body {
     padding: 10px;
 }
 .app .content .scanex-component-sidebar-panel {
-    width: var(--sidebar-panel-width);    
+    width: var(--sidebar-panel-width); 
+    padding: 10px;
 }
 .app .content > .map {
     width: var(--map-width-initial);
@@ -91,14 +92,15 @@ html, body {
 .scanex-component-dialog {    
     background-color: #FFFFFF;
     box-shadow: 0px 1px 7.84px 0.16px rgba(0, 0, 0, 0.16); 
+    --dialog-header-background-color: #dddddd;
 }
 .scanex-component-dialog .header,
 .scanex-component-dialog .content,
 .scanex-component-dialog .footer {
     padding: 10px;
 }
-.scanex-component-dialog.map-dialog > .header {
-    background-color: gainsboro;
+.scanex-component.scanex-component-dialog > .header {
+    background-color: var(--dialog-header-background-color);
 }
 .app > .header > .scanex-component-menu > .scanex-menu-group {
     padding: 6px;

@@ -14,18 +14,19 @@ export default class MapCreate extends Dialog {
     }
     render(element, options) {
         super.render(element, options);
-        this.content.innerHTML = `<div>
-            <label>${translate('dialog.map.name')}</label>
-            <input class="name" type="text" value="" />
-        </div>`;
-        this._name = this.content.querySelector('.name');
+        element.classList.add('map-create');
+        this.content.innerHTML = `<label>${translate('dialog.map.name')}</label><input class="name" type="text" value="" />`;
+        this._name = this.content.querySelector('.name');        
         this.footer.innerHTML = `<button>${translate('dialog.ok')}</button>`;
-        this.footer.querySelector('button').addEventListener('click', e => {
+        this._btnOK = this.footer.querySelector('button');
+        this._btnOK.disabled = true;        
+        this._btnOK.addEventListener('click', e => {
             e.stopPropagation();
             let event = document.createEvent('Event');
             event.initEvent('ok', false, false);
             this.dispatchEvent(event);
         });
+        this._name.addEventListener('keydown', () => this._btnOK.disabled = this._name.value.trim() == '');
     }    
     get name() {
         return this._name.value;

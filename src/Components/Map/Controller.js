@@ -45,7 +45,8 @@ export default class MapController extends Controller {
                     dlg.on('select', async e => {                                                    
                         dlg.destroy();
                         dlg = null;
-                        this._mapInfo = e.detail;
+                        const {id, name, layers} = e.detail;
+                        this._mapInfo = {id, name, layers};
                         this.clear();
                         Array.isArray(this._mapInfo.layers) && this._mapInfo.layers.forEach(layer => {
                             layer.visible = true;
@@ -62,7 +63,7 @@ export default class MapController extends Controller {
         });              
     }
     async save() {
-        await this._httpPut('maps', this._mapInfo);        
+        await this._httpPut(`maps/${this._mapInfo.id}`, this._mapInfo);
     }
     clear() {
         Array.isArray(this._mapInfo.layers) && this._mapInfo.layers.forEach(layer => {
@@ -71,11 +72,22 @@ export default class MapController extends Controller {
     }
     addLayer(layer) {
         this._mapInfo.layers = Array.isArray(this._mapInfo.layers) && this._mapInfo.layers || [];
-        this._mapInfo.layers.push(layer);
+        layer.maps = Array.isArray(layer.maps) && layer.maps || [];
+        layer.maps.push({id: this._mapInfo.id});
+        const {id, name, maps, mapLayers} = layer;
+        this._mapInfo.layers.push({id, name, maps});
         if (layer.visible) {
             this._map.addLayer(layer.id);
         }
     }
+    changeLayerVisibility(layerId, visible) {
+        if (visible) {
+            this._map.addLayer(layerId);
+        }
+        else {
+            this._map.removeLayer(layerId);
+        }        
+    }    
     expand() {
         this._map.expand();
     }

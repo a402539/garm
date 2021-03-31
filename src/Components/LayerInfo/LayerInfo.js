@@ -7,13 +7,13 @@ Translation.add('ru', ru);
 
 const translate = Translation.translate;
 
-export default class LayerInfo extends Component {
-    constructor(container, options) {
-        super(container, options);
-    }
+export default class LayerInfo extends Component {    
     render(element, options) {
         element.classList.add('layer-info');
         const {id, name} = options;
-        element.innerHTML = `<div data-id="${id}">${name}</div>`;
+        element.innerHTML = `<div data-id="${id}">
+            <label>${id}</label>
+            <label>${name}</label>
+        </div>`;
     }
 };

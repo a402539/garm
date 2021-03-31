@@ -1,5 +1,7 @@
+import './MapInfo.css';
 import {Component, Translation} from '@scanex/components';
-import LayerInfo from '../LayerInfo/LayerInfo.js';
+import List from '../List/List.js';
+import Layer from './Layer.js';
 
 import en from './strings.en.json';
 import ru from './strings.ru.json';
@@ -14,21 +16,30 @@ export default class MapInfo extends Component {
         super(container, options);
     }    
     render(element, options) {
+        element.classList.add('map-info');
         const {id, name} = options;
         this._layers = {};
-        element.innerHTML = `<div>
+        element.innerHTML = `<div class="id">
             <label>${translate('info.map.id')}</label>
             <label>${id}</label>
         </div>
-        <div>
+        <div class="name">
             <label>${translate('info.map.name')}</label>
             <label>${name}</label>
-        </div>
-        <div class="layers"></div>`;
-        this._layersContainer = element.querySelector('.layers');
+        </div>`;        
+        this._list = new List(element, Layer);        
     }
     addLayer(layer) {
-        this._layers[layer.id] && this._layers[layer.id].destroy();
-        this._layers[layer.id] = new LayerInfo(this._layersContainer, layer);
+        this._layers[layer.id] = layer;
+        this._list.items = Object.keys(this._layers).map(id => this._layers[id]);
+        for (let item of this._list.items) {
+            item.on('change:visibility', e => {            
+                let event = document.createEvent('Event');
+                event.initEvent('layer:visible', false, false);
+                const {id, visible} = item;
+                event.detail = {id, visible};
+                this.dispatchEvent(event);
+            });
+        }
     }
 };

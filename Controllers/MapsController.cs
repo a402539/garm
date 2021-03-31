@@ -57,9 +57,9 @@ namespace garm.Controllers
         }
 
         [HttpPut("{id}")]
-        [Consumes(MediaTypeNames.Application.Json)]
-        [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Consumes(MediaTypeNames.Application.Json)]        
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]        
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<Map>> SaveMap(Guid id, Map map)
         {                                    
             if (id != map.Id)
@@ -71,8 +71,9 @@ namespace garm.Controllers
 
             try
             {
-                await _context.SaveChangesAsync();
-                return CreatedAtAction("SavedMap", new { id = map.Id }, map);
+                await _context.SaveChangesAsync();                
+                return NoContent();
+
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -94,7 +95,7 @@ namespace garm.Controllers
 
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Map))]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]        
         public async Task<ActionResult<Map>> DeleteLayer(Guid id)
         {
             var map = await _context.Maps.FindAsync(id);

@@ -107,6 +107,10 @@ export default class AppController extends Controller {
                 this._mapInfo.destroy();
                 this._mapInfo = new MapInfo(panel, {id, name});
             }
+            this._mapInfo.on('layer:visible', e => {
+                const {id, visible} = e.detail;
+                this._controllers.map.changeLayerVisibility(id, visible);
+            });
         }
     }
 

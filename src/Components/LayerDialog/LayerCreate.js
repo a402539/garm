@@ -25,15 +25,18 @@ export default class LayerCreate extends Dialog {
                 <option value="1">${translate('dialog.layer.type.grid')}</option>
             </select>
         </div>`;
-        this._name = this.content.querySelector('.name');
+        this._name = this.content.querySelector('.name');        
         this._type = this.content.querySelector('.type');
         this.footer.innerHTML = `<button>${translate('dialog.ok')}</button>`;
-        this.footer.querySelector('button').addEventListener('click', e => {
+        this._btnOK = this.footer.querySelector('button');
+        this._btnOK.disabled = true;        
+        this._btnOK.addEventListener('click', e => {
             e.stopPropagation();
             let event = document.createEvent('Event');
             event.initEvent('ok', false, false);
             this.dispatchEvent(event);
         });
+        this._name.addEventListener('keydown', () => this._btnOK.disabled = this._name.value.trim() == '');
     }
     get name() {
         return this._name.value;

@@ -14,8 +14,10 @@ namespace garm.Models {
         [Key]
         [Column("layer_id")]
         public Guid Id { get; set; }
+
         [Column("created_at")]
         DateTime Created { get; set; }
+
         [Column("layer_name")]
         public string Name { get; set; }
 
@@ -26,6 +28,7 @@ namespace garm.Models {
         public bool Visible { get; set; }
 
         public ICollection<Map> Maps { get; set; }
+
         public List<MapLayer> MapLayers { get; set; }
     }
     

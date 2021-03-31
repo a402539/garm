@@ -1,0 +1,21 @@
+.map-info {
+    --map-info-label-width: 80px;
+    --map-info-value-width: 300px;
+}
+.map-info > .id > *,
+.map-info > .name > * {
+    float: left;
+    display: block;
+}
+.map-info > .id,
+.map-info > .name {
+    clear: left;
+}
+.map-info > .id > :nth-child(1),
+.map-info > .name > :nth-child(1) {
+    width: var(--map-info-label-width);
+}
+.map-info > .id > :nth-child(2),
+.map-info > .name > :nth-child(2) {
+    width: var(--map-info-value-width);
+}
