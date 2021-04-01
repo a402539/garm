@@ -2,12 +2,42 @@ import Renderer from './renderer.js';
 import {VectorTile} from '@mapbox/vector-tile';
 import Protobuf from 'pbf';
 
+self.document = {
+  createElement(type) {
+    if (type === 'canvas') {
+      return new OffscreenCanvas(0, 0);
+    } else {
+      console.log('CreateElement called with type = ', type);
+
+      return {
+        style: {},
+      };
+    }
+  },
+
+  addEventListener() { },
+};
+
+self.window = {
+  console: self.console,
+  addEventListener() { },
+  navigator: {},
+  document: self.document,
+  removeEventListener: function () { },
+  WebGLRenderingContext: {}
+};
+
+importScripts(
+  'pixiv5_worker.js'
+);
+
 let canvas;
 let abortController;
 let visibleLayers = {};
 let cwidth, cheight;
 let renderNum = 0;
 let moveendNum = 0;
+let appPixi;
 
 async function getBoxTiles(signal, bbox) {
 	const [xmin, ymin, xmax, ymax] = bbox;	
@@ -26,7 +56,7 @@ async function getBoxTiles(signal, bbox) {
 	return response.json();
 }
 
-function getTilePromise (layerId, z, x, y) {
+function getTilePromise (layerId, z, x, y, pixi) {
 	return fetch(`/tile/${layerId}/${z}/${x}/${y}`)
 	.then(res => res.blob())
 	.then(blob => blob.arrayBuffer())
@@ -47,21 +77,46 @@ function getTilePromise (layerId, z, x, y) {
 				const properties = vf.properties;
 				const coordinates = vf.loadGeometry();
 				const path1 = new Path2D();
-				coordinates[0].forEach((p, i) => {
-					if (i) {
-						path1.lineTo(p.x, p.y);
+				let grp;
+				if (pixi) {
+					grp = new PIXI.Graphics();
+					if (vf.type !== 2) {
+						grp.beginFill(0xFF0000, 0.01);
 					}
-					else {
-						if (vf.type === 1) {
-							path1.arc(p.x, p.y, 5, 0, 2 * Math.PI);
-						} else {
-							path1.moveTo(p.x, p.y);
+					grp.lineStyle(2, 0x0000FF, 1);
+					coordinates[0].forEach((p, i) => {
+						if (i) {
+							grp.lineTo(p.x, p.y);
 						}
+						else {
+							if (vf.type === 1) {
+								grp.drawCircle(p.x, p.y, 5);
+							} else {
+								grp.moveTo(p.x, p.y);
+							}
+						}
+					});
+					if (vf.type !== 2) {
+						grp.closePath();
+						grp.endFill();
 					}
-				});
-				// path1.closePath();
-				path.addPath(path1);
-				t.layers[k].features.push({type: vf.type, properties, coordinates, path: path1});
+				} else {
+					coordinates[0].forEach((p, i) => {
+						if (i) {
+							path1.lineTo(p.x, p.y);
+						}
+						else {
+							if (vf.type === 1) {
+								path1.arc(p.x, p.y, 5, 0, 2 * Math.PI);
+							} else {
+								path1.moveTo(p.x, p.y);
+							}
+						}
+					});
+					// path1.closePath();
+					path.addPath(path1);
+				}
+				t.layers[k].features.push({type: vf.type, properties, coordinates, path: path1, graphics: grp});
 			}					
 		});				
 		return t;
@@ -86,19 +141,25 @@ async function getTiles (zoom, bbox, bounds) {
 		tiles.forEach(({z, x, y}) => {		
 			const tKey = `${x}:${y}:${z}`;
 			if (!promises[tKey]) {
-				promises[tKey] = getTilePromise(layerId, z, x, y);
+				promises[tKey] = getTilePromise(layerId, z, x, y, layerData.appPixi);
 			}
 		});
 		layerData.promises = promises;
-		const canvas = layerData.canvas;
-		const ctx = canvas.getContext("2d");
-		ctx.resetTransform();
-		ctx.clearRect(0, 0, cwidth, cheight);
-		ctx.strokeStyle = 'blue';
-		ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
-
 		let tm = Date.now();
 		let cnt = 0;
+		let ctx;
+		if (layerData.appPixi) {
+			layerData.appPixi.stage.removeChildren();
+			ctx = new PIXI.Graphics();
+		} else {
+			const canvas = layerData.canvas;
+			ctx = canvas.getContext("2d");
+			ctx.resetTransform();
+			ctx.clearRect(0, 0, cwidth, cheight);
+			ctx.strokeStyle = 'blue';
+			ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
+		}
+
 		// Promise.all(Object.values(promises))
 			// promise.then(tiles => {		
 				// tiles.forEach(tile => {
@@ -112,19 +173,36 @@ async function getTiles (zoom, bbox, bounds) {
 						x0 += Math.pow(2, z) * tw;
 					}
 					const y0 = y * tw - bounds.min.y;
-					ctx.resetTransform();
-					const sc = tw / extent;				
-					ctx.transform(sc, 0, 0, sc, x0, y0);
-					ctx.lineWidth = 1 / sc;
+					const sc = tw / extent;
+					if (!layerData.appPixi) {
+						ctx.resetTransform();
+						ctx.transform(sc, 0, 0, sc, x0, y0);
+						ctx.lineWidth = 1 / sc;
+					} else {
+								// ctx.position.x = x0;
+								// ctx.position.y = y0;
+								// ctx.scale.x = sc;
+								// ctx.scale.y = sc;
+					}
 					Object.keys(layers).forEach(k => {
 						const {features} = layers[k];
 						features.forEach(feature => {
-							Renderer.renderPath(ctx, feature);
+							if (layerData.appPixi) {
+								const graphics = feature.graphics;
+								graphics.position.x = x0;
+								graphics.position.y = y0;
+								graphics.scale.x = sc;
+								graphics.scale.y = sc;
+			layerData.appPixi.stage.addChild(graphics);
+								// Renderer.renderPixi(ctx, feature);
+							} else {
+								Renderer.renderPath(ctx, feature);
+							}
 							cnt++;
 						});
 					});
-					// });		
-					console.log('tile tm:', x, y, z, Date.now() - tm);
+		
+					console.log('tile tm:', x, y, z, Object.keys(promises).length, cnt, Date.now() - tm);
 					// bitmapToMain(layerId, canvas);
 					// console.log('tm:', Date.now() - tm);
 				// } else {
@@ -134,8 +212,11 @@ async function getTiles (zoom, bbox, bounds) {
 			})
 			.catch(() => {});
 		});
+		// if (layerData.appPixi) {
+			// layerData.appPixi.stage.addChild(ctx);
+		// }
 		renderNum++;
-		console.log('layer tm:', renderNum, cnt, Date.now() - tm);
+		console.log('layer tm:', renderNum, Object.keys(promises).length, cnt, Date.now() - tm);
 		bitmapToMain(layerId, canvas);
 	});
 }
@@ -185,6 +266,7 @@ const getItemsByPoint = (layerData, p, zoom) => {
 const chkEvent = ev => {
 	switch(ev.type) {
 		case 'mousemove':
+			break;
 			let items;
 			const point = ev.containerPoint;
 			for (let layerId in visibleLayers) {
@@ -232,12 +314,21 @@ addEventListener('tilesLoaded', getTiles);
 
 onmessage = function(evt) {    
 	const data = evt.data || {};
-	const {cmd, layerId, zoom, bbox, bounds, width, height, canvas} = data;
+	const {cmd, layerId, zoom, bbox, bounds, width, height, canvas, webGL} = data;
 	switch(cmd) {
 		case 'addLayer':
 			visibleLayers[layerId] = {
 				canvas
 			};
+			if (webGL === 'pixi') {
+				visibleLayers[layerId].appPixi = new PIXI.Application({
+					width: width,
+					height: height,
+					view: canvas,
+					transparent: true,
+					antialias: true
+				});
+			}
 			getTiles(zoom, bbox, bounds);
 			break;
 		case 'removeLayer':
@@ -254,7 +345,7 @@ onmessage = function(evt) {
 			getTiles(zoom, bbox, bounds);
 			break;
 		case 'eventCheck':
-			chkEvent(data);
+			//chkEvent(data);
 			break;
 		default:
 			console.warn('Warning: Bad command ', data);

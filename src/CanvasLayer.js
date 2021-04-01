@@ -24,7 +24,10 @@ export default L.Layer.extend({
 			this.options.dataManager.postMessage({
 				cmd: 'addLayer',
 				layerId: this.options.layerId,
+				webGL: this.options.webGL,
 				canvas: offscreen,
+			width: this._canvas.width,
+			height: this._canvas.height,
 				zoom: map.getZoom(),
 				bbox: [m1.x, m1.y, m2.x, m2.y],
 				bounds: map.getPixelBounds(),
