@@ -2,6 +2,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {Component} from '@scanex/components';
 import CanvasLayer from 'CanvasLayer.js';
+import CanvasOverlay from 'L.CanvasOverlay.js';
 
 export default class Map extends Component {
     constructor(container, options) {
@@ -41,7 +42,7 @@ export default class Map extends Component {
         
         this._map
 			// .on('click', this._eventCheck, this)
-			.on('click dblclick mousedown mouseup mousemove contextmenu', this._eventCheck, this)
+			// .on('click dblclick mousedown mouseup mousemove contextmenu', this._eventCheck, this)
 			.on('moveend', this._moveend, this);        
         this._moveend();
     }
@@ -84,7 +85,12 @@ export default class Map extends Component {
     }    
     addLayer(layerId) {
         if (!this._layers[layerId]) {
-            const layer = new CanvasLayer({dataManager: this._dataManager, layerId, webGL: 'pixi'});
+            const layer = new CanvasOverlay({dataManager: this._dataManager, layerId, webGL: true});
+			  // var glLayer = L.canvasOverlay()
+      // .drawing(drawingOnCanvas)
+      // .addTo(leafletMap);
+
+            // const layer = new CanvasLayer({dataManager: this._dataManager, layerId, webGL: 'pixi'});
             this._layers[layerId] = layer;
             this._map.addLayer(layer);
         }

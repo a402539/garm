@@ -33,6 +33,7 @@
   "dependencies": {
     "@scanex/components": "git+https://github.com/Scanex/Components.git",
     "@scanex/evented": "git+https://github.com/Scanex/Evented.git",
-    "@scanex/translations": "git+https://github.com/Scanex/Translations.git"
+    "@scanex/translations": "git+https://github.com/Scanex/Translations.git",
+    "earcut": "^2.2.2"
   }
 }
