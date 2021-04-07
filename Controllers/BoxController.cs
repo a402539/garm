@@ -24,21 +24,33 @@ namespace garm.Controllers
             _logger = logger;
         }
 
+        // [HttpPost]
+        // [Consumes(MediaTypeNames.Application.Json)]
+        // [ProducesResponseType(StatusCodes.Status200OK)]
+        // [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        // public async Task<ActionResult<List<LayerTiles>>> GetTiles (Box box)
+        // {
+        //     var list = await _context.Set<Tile>()
+        //         .FromSqlInterpolated($"SELECT layer_id, x, y, z FROM geo.get_box_tiles({box.Layers},{box.XMin},{box.YMin},{box.XMax},{box.YMax})")
+        //         .ToListAsync();
+
+        //     var q = from t in list
+        //             group t by t.LayerId into g
+        //             select new LayerTiles { LayerId = g.Key, Tiles = g.AsEnumerable() };
+
+        //     return q.ToList();
+        // }
+
         [HttpPost]
         [Consumes(MediaTypeNames.Application.Json)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<List<LayerTiles>>> GetTiles (Box box)
+        public async Task<ActionResult<List<Tile>>> GetTiles (Box box)
         {
-            var list = await _context.Set<Tile>()
-                .FromSqlInterpolated($"SELECT layer_id, x, y, z FROM geo.get_box_tiles({box.Layers},{box.XMin},{box.YMin},{box.XMax},{box.YMax})")
-                .ToListAsync();
-
-            var q = from t in list
-                    group t by t.LayerId into g
-                    select new LayerTiles { LayerId = g.Key, Tiles = g.AsEnumerable() };
-
-            return q.ToList();
+            return await _context.Set<Tile>()
+                .FromSqlInterpolated($"SELECT x, y, z FROM geo.get_box_tiles({box.Zoom},{box.XMin},{box.YMin},{box.XMax},{box.YMax})")
+                .ToListAsync();            
         }
+
     }
 }

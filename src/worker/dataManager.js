@@ -51,6 +51,8 @@ function concatArrayBuffer (arr) {
 	// return verts3;
 // }
 
+
+
 async function getTiles (zoom, bbox, bounds) {	
 	if (abortController) {
 		abortController.abort();
@@ -59,11 +61,9 @@ async function getTiles (zoom, bbox, bounds) {
 	abortController = new AbortController();	
 	moveendNum++;
 	const layersArr = await getBoxTiles(abortController.signal, bbox);
-	layersArr.forEach(layerItem => {
-		const {layerId, tiles} = layerItem;
-		if (!layerId) {
-			return;
-		}
+	console.log(layersArr);
+	return;
+	layersArr.forEach(layerItem => {		
 	// self.postMessage({
 		// cmd: 'tiles',
 		// tiles

@@ -6,10 +6,8 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace garm.Models {    
-    [Table("tiles", Schema = "geo")]
-    public class Tile {
-        [Column("layer_id")]
-        public Guid LayerId { get; set; }
+    [NotMapped]
+    public class Tile {        
         [Column("x")]
         public int X { get; set; }
         [Column("y")]

@@ -9,11 +9,12 @@ namespace garm.Models {
 
     [NotMapped]
     public class Box {
+        public int Zoom { get; set; }
         public double XMin { get; set; }
         public double YMin { get; set; }
         public double XMax { get; set; }
         public double YMax { get; set; }
-        public ICollection<Guid> Layers { get; set; }        
+        public ICollection<Guid> Layers { get; set; }
     }
     
 }

@@ -35,7 +35,7 @@ namespace garm
                     });
                 
             modelBuilder.Entity<Tile>()
-                .HasKey(p => new { p.LayerId, p.X, p.Y, p.Z });
+                .HasKey(p => new { p.Z, p.X, p.Y });
            
         }
     }

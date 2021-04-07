@@ -3,6 +3,7 @@ import 'leaflet/dist/leaflet.css';
 import {Component} from '@scanex/components';
 import CanvasLayer from 'CanvasLayer.js';
 import CanvasOverlay from 'L.CanvasOverlay.js';
+import GridLayer from 'GridLayer.js';
 
 export default class Map extends Component {
     constructor(container, options) {
@@ -85,11 +86,12 @@ export default class Map extends Component {
     }    
     addLayer(layerId) {
         if (!this._layers[layerId]) {
-            const layer = new CanvasOverlay({dataManager: this._dataManager, layerId, webGL: true});
-			  // var glLayer = L.canvasOverlay()
-      // .drawing(drawingOnCanvas)
-      // .addTo(leafletMap);
+            // const layer = new CanvasOverlay({dataManager: this._dataManager, layerId, webGL: true});
+			// var glLayer = L.canvasOverlay()
+            // .drawing(drawingOnCanvas)
+            // .addTo(leafletMap);
 
+            const layer = new GridLayer({layerId});
             // const layer = new CanvasLayer({dataManager: this._dataManager, layerId, webGL: 'pixi'});
             this._layers[layerId] = layer;
             this._map.addLayer(layer);
