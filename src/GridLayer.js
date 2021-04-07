@@ -14,9 +14,24 @@ export default L.GridLayer.extend({
         tile.height = size.y;
         
         const {z, x, y} = coords;
+		let ctx = tile.getContext('2d');
                 
         fetch(`tile/${this.options.layerId}/${z}/${x}/${y}`)
-        .then(blob => console.log(blob));        
+        .then(resp => resp.blob())
+        // .then(blob => blob.arrayBuffer())
+        .then(buf => {
+			var image = new Image(255, 255);;
+				// document.body.appendChild(image);
+			image.onload = function(){
+				ctx.drawImage(image, 0, 0);
+				
+			}
+			image.src = URL.createObjectURL(buf);
+			done('', tile);
+
+			// ctx.drawImage(, 0, 0);
+			console.log(buf);
+		});        
 
         return tile;
     }

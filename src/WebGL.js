@@ -109,10 +109,11 @@ export default class WebGLRenderer {
 	
 		
 		this._gl.clear(this._gl.COLOR_BUFFER_BIT);
-				
+    // this._gl.clearColor(1, 0.0, 0, 0.5);
+
 		const pixelsToWebGLMatrix = new Float32Array(16);
-		this._pixelsToWebGLMatrix.set([2 / this._width, 0, 0, 0, 0, -2 / this._height, 0, 0, 0, 0, 0, 0, -1, 1, 0, 1]);
-		// gl.viewport(0, 0, canvas.width, canvas.height);
+		pixelsToWebGLMatrix.set([2 / this._width, 0, 0, 0, 0, -2 / this._height, 0, 0, 0, 0, 0, 0, -1, 1, 0, 1]);
+		// gl.viewport(0, 0, this._width, this._height);
 	
 		const pointSize = Math.max(zoom - 4.0, 1.0);
 		// var pointSize = Math.max(leafletMap.getZoom() - 4.0, 1.0);
@@ -124,8 +125,8 @@ export default class WebGLRenderer {
 	
 		// -- Scale to current zoom
 		// var scale = Math.pow(2, leafletMap.getZoom());
-		var scale = Math.pow(2, zoom);
-		this.scaleMatrix(mapMatrix, scale, scale);
+		// var scale = Math.pow(2, zoom);
+		// this.scaleMatrix(mapMatrix, scale, scale);
 	
 		// this.translateMatrix(mapMatrix, -bounds.min.x / scale, -bounds.min.y / scale);
 			

@@ -102,6 +102,7 @@ function fetchAndCache(request) {
 				let x = parseInt(arr.pop(), 10);
 				let z = parseInt(arr.pop(), 10);								
 				const sc = 256 / 4096;
+				// const sc = 1;
 				const {layers} = new VectorTile(new Protobuf(buf));
 				var verts1 = [];
 				let len = 0;
@@ -111,7 +112,8 @@ function fetchAndCache(request) {
 						const vf = layer.feature(i);							
 						const properties = vf.properties;
 						const coordinates = vf.loadGeometry();
-						const coords = coordinates.map(d => {
+// console.log('coordinates', z, x, y, coordinates);
+							const coords = coordinates.map(d => {
 							return d.map(d1 => [d1.x * sc, d1.y * sc]);						
 						});
 						let v1 = appendVertex(coords);
