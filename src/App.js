@@ -58,6 +58,17 @@ export default class AppController extends Controller {
         Object.keys(this._controllers).forEach(k => {
             this._controllers[k].notification = this._notification;
         });
+		navigator.serviceWorker.register('./sw.js')
+		  .then(function(registration) {
+			if (registration.active) {
+				// L.gmx.serviceWorker = registration.active;
+			}
+			console.log('ServiceWorker registration successful with scope: ', registration.scope);
+		  })
+		  .catch(function(err) {
+			console.log('ServiceWorker registration failed: ', err);
+		  });
+
     }
 
     async _mapMenuHandler(e) {
