@@ -88,7 +88,6 @@ self.addEventListener('fetch', function(event) {
 // Helper to fetch and store in cache.
 //
 function fetchAndCache(request) {
-	/**/
 	if (/\/tile\//.test(request.url)) {
 		return fetch(request)
 			.then(response => response.blob())
@@ -133,28 +132,14 @@ function fetchAndCache(request) {
 					verts.set(it, cnt);
 					cnt += it.length;
 				});
-				// response._verts = verts;
 				return verts;
 			})
 			.then(function (verts) {
-				// var myArray = new ArrayBuffer(512);
-				// var longInt8View = new Float32Array(myArray);
-
 				let str = verts.buffer;
 				// let str = JSON.stringify(verts);
 				caches.open(CACHE_NAME).then(function(cache) {
-					  // console.log('Store in cache', response);
-					// client.postMessage(
-						// JSON.stringify({
-						  // type: response.url,
-						  // data: jsonResponse.data
-						// })
-					// );
 					let resp = new Response(str);
 					cache.put(request, resp);
-					// return cache.put(request, verts);
-					// return cache.addAll(verts);
-					// cache.put(request, response);
 					return resp;
 				});
 				return new Response(str);
@@ -163,44 +148,6 @@ function fetchAndCache(request) {
 		return fetch(request)
 			.then(function (response) {
 				return caches.open(CACHE_NAME).then(function(cache) {
-					  // console.log('Store in cache', response);
-					  /*
-					if (/\/tile\//.test(request.url)) {
-						response.blob().then(blob => blob.arrayBuffer()).then(buf => {
-							// let buf = blob.arrayBuffer();
-							let arr = request.url.split('/');
-							let y = arr.pop(); let x = arr.pop(); let z = arr.pop();
-							let tm = Date.now();
-							const tw = 1 << (8 - z);
-							let x0 = x * tw - 0;
-							if (x0 + tw < 0) {
-								x0 += Math.pow(2, z) * tw;
-							}
-							const y0 = y * tw - 0;
-							let sc;
-							const {layers} = new VectorTile(new Protobuf(buf));
-							var verts = [];
-							Object.keys(layers).forEach(k => {
-								const layer = layers[k];
-								if (!sc) {
-									sc = tw / layer.extent
-								}
-								for (let i = 0; i < layer.length; ++i) {
-									const vf = layer.feature(i);							
-									const properties = vf.properties;
-									const coordinates = vf.loadGeometry();
-									const coords = coordinates.map(d => {
-										return d.map(d1 => {
-											return [x0 + d1.x * sc, y0 + d1.y * sc];
-										});
-									
-									});
-									verts.push(appendVertex(coords));
-								}
-							});
-							// response._verts = verts;
-						});
-					}*/
 					cache.put(request, response.clone());
 					return response;
 				});
