@@ -5999,12 +5999,11 @@
 	        return;
 	      }
 
-	      this._gl.clear(this._gl.COLOR_BUFFER_BIT);
+	      this._gl.clear(this._gl.COLOR_BUFFER_BIT); // this._gl.clearColor(1, 0.0, 0, 0.5);
+
 
 	      var pixelsToWebGLMatrix = new Float32Array(16);
-
-	      this._pixelsToWebGLMatrix.set([2 / this._width, 0, 0, 0, 0, -2 / this._height, 0, 0, 0, 0, 0, 0, -1, 1, 0, 1]); // gl.viewport(0, 0, canvas.width, canvas.height);
-
+	      pixelsToWebGLMatrix.set([2 / this._width, 0, 0, 0, 0, -2 / this._height, 0, 0, 0, 0, 0, 0, -1, 1, 0, 1]); // gl.viewport(0, 0, this._width, this._height);
 
 	      var pointSize = Math.max(zoom - 4.0, 1.0); // var pointSize = Math.max(leafletMap.getZoom() - 4.0, 1.0);
 
@@ -6014,9 +6013,9 @@
 	      var mapMatrix = new Float32Array(16);
 	      mapMatrix.set(pixelsToWebGLMatrix); // -- Scale to current zoom
 	      // var scale = Math.pow(2, leafletMap.getZoom());
-
-	      var scale = Math.pow(2, zoom);
-	      this.scaleMatrix(mapMatrix, scale, scale); // this.translateMatrix(mapMatrix, -bounds.min.x / scale, -bounds.min.y / scale);
+	      // var scale = Math.pow(2, zoom);
+	      // this.scaleMatrix(mapMatrix, scale, scale);
+	      // this.translateMatrix(mapMatrix, -bounds.min.x / scale, -bounds.min.y / scale);
 	      // gl.uniformMatrix4fv(u_matLoc, false, pixelsToWebGLMatrix);
 	      // -- attach matrix value to 'mapMatrix' uniform in shader
 
@@ -6144,7 +6143,7 @@
 	      parseInt(arr.pop(), 10);
 	      parseInt(arr.pop(), 10);
 	      var z = parseInt(arr.pop(), 10);
-	      var sc = 256 / 4096;
+	      var sc = 256 / 4096; // const sc = 1;
 
 	      var _VectorTile = new VectorTile(new pbf(buf)),
 	          layers = _VectorTile.layers;
@@ -6157,7 +6156,8 @@
 	        for (var i = 0; i < layer.length; ++i) {
 	          var vf = layer.feature(i);
 	          vf.properties;
-	          var coordinates = vf.loadGeometry();
+	          var coordinates = vf.loadGeometry(); // console.log('coordinates', z, x, y, coordinates);
+
 	          var coords = coordinates.map(function (d) {
 	            return d.map(function (d1) {
 	              return [d1.x * sc, d1.y * sc];

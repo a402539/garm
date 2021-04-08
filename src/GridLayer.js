@@ -20,18 +20,11 @@ export default L.GridLayer.extend({
         .then(resp => resp.blob())
         // .then(blob => blob.arrayBuffer())
         .then(buf => {
-			var image = new Image(255, 255);;
-				// document.body.appendChild(image);
-			image.onload = function(){
-				ctx.drawImage(image, 0, 0);
-				
-			}
+			let image = new Image(255, 255);
+			image.onload = () => ctx.drawImage(image, 0, 0);			
 			image.src = URL.createObjectURL(buf);
-			done('', tile);
-
-			// ctx.drawImage(, 0, 0);
-			console.log(buf);
-		});        
+			done(error, tile);
+		});       
 
         return tile;
     }
