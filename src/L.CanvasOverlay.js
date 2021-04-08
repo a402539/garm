@@ -44,41 +44,19 @@ export default L.Layer.extend({
     this._canvas1.height = size.y;
 
     var animated = this._map.options.zoomAnimation && L.Browser.any3d;
-    L.DomUtil.addClass(this._canvas, 'leaflet-zoom-'
-      + (animated ? 'animated' : 'hide'));
-
-    // map._panes.overlayPane.appendChild(this._canvas);
+    L.DomUtil.addClass(this._canvas, 'leaflet-zoom-' + (animated ? 'animated' : 'hide'));
+    L.DomUtil.addClass(this._canvas1, 'leaflet-zoom-' + (animated ? 'animated' : 'hide'));
 
     map.on('mousedown', this._mousedown, this);
-    // map.on('movestart', this._movestart, this);
+    map.on('zoomstart', this._copyScreen, this);
+    map.on('zoomend', this._zoomend, this);
     map.on('moveend', this._reset, this);
     map.on('resize', this._resize, this);
 
-    if (map.options.zoomAnimation && L.Browser.any3d) {
+    if (animated) {
       map.on('zoomanim', this._animateZoom, this);
     }
-	const bounds = map.getBounds();
-	const sw = bounds.getSouthWest();
-	const ne = bounds.getNorthEast();
-	const m1 = L.Projection.Mercator.project(L.latLng([sw.lat, sw.lng]));
-	const m2 = L.Projection.Mercator.project(L.latLng([ne.lat, ne.lng]));
-	Webgl.init(this._canvas);
-
-	// const offscreen = this._canvas.transferControlToOffscreen();
-	this.options.dataManager.postMessage({
-		cmd: 'addLayer',
-		layerId: this.options.layerId,
-		webGL: this.options.webGL,
-		// canvas: offscreen,
-		width: this._canvas.width,
-		height: this._canvas.height,
-		zoom: map.getZoom(),
-		bbox: [m1.x, m1.y, m2.x, m2.y],
-		bounds: map.getPixelBounds(),
-		dateBegin: this.options.dateBegin,
-		dateEnd: this.options.dateEnd,
-	// }, [offscreen]);
-	});
+	this._resetDataManager();
 
     this._reset();
   },
@@ -87,11 +65,12 @@ export default L.Layer.extend({
     map.getPanes().overlayPane.removeChild(this._canvas);
 
     map.off('mousedown', this._mousedown, this);
-    // map.off('movestart', this._movestart, this);
+    map.off('zoomstart', this._copyScreen, this);
+    map.off('zoomend', this._zoomend, this);
     map.off('moveend', this._reset, this);
     map.off('resize', this._resize, this);
 
-    if (map.options.zoomAnimation) {
+    if (map.options.zoomAnimation && L.Browser.any3d) {
       map.off('zoomanim', this._animateZoom, this);
     }
 
@@ -104,37 +83,41 @@ export default L.Layer.extend({
   },
 
   _resize: function(resizeEvent) {
-    this._canvas.width = resizeEvent.newSize.x;
-    this._canvas.height = resizeEvent.newSize.y;
+    this._canvas.width = this._canvas1.width = resizeEvent.newSize.x;
+    this._canvas.height = this._canvas1.height = resizeEvent.newSize.y;
+	this._resetDataManager();
+  },
+
+  _copyScreen: function() {
+	var ctx = this._canvas1.getContext('2d');
+	ctx.clearRect(0, 0, this._canvas1.width, this._canvas1.height)
+	ctx.drawImage(this._canvas, 0, 0);
   },
 
   _mousedown: function() {
-	this._canvas1.getContext('2d').drawImage(this._canvas, 0, 0);
-	this._canvas1.style.display = 'block';
-	this._canvas.style.display = 'none';
-
-    var topLeft = this._map.containerPointToLayerPoint([0, 0]);
-    L.DomUtil.setPosition(this._canvas1, topLeft);
-	console.log('_viewreset', topLeft);
+	this._copyScreen();
+	this._topLeft = this._map.containerPointToLayerPoint([0, 0]);
+	// console.log('_viewreset', this._topLeft);
   },
 
-  _movestart: function() {
-	this._canvas1.getContext('2d').drawImage(this._canvas, 0, 0);
-	this._canvas1.style.display = 'block';
+  _zoomend: function(ev) {
+	// console.log('_zoomend', ev);
+	this._skeepReset = true;
 	this._canvas.style.display = 'none';
-
-    var topLeft = this._map.containerPointToLayerPoint([0, 0]);
-    L.DomUtil.setPosition(this._canvas1, topLeft);
-	console.log('_movestart', topLeft);
+	this._canvas1.style.display = 'block';
   },
 
-  _reset: function() {
-    var topLeft = this._map.containerPointToLayerPoint([0, 0]);
-	console.log('moveend', topLeft);
-    L.DomUtil.setPosition(this._canvas, topLeft);
-	this._canvas1.style.display = 'none';
-	this._canvas.style.display = 'block';
-    L.DomUtil.setPosition(this._canvas1, topLeft);
+  _reset: function(ev) {
+	if (!this._skeepReset) {
+		var topLeft = this._map.containerPointToLayerPoint([0, 0]);
+		// console.log('moveend', ev, topLeft);
+		L.DomUtil.setPosition(this._canvas, topLeft);
+		L.DomUtil.setPosition(this._canvas1, this._topLeft);
+		this._canvas.style.display = 'none';
+		this._canvas1.style.display = 'block';
+		// L.DomUtil.setPosition(this._canvas1, topLeft);
+	}
+	this._skeepReset = false;
     this._redraw();
   },
   rendered: function (data) {
@@ -146,30 +129,43 @@ export default L.Layer.extend({
 		const zoom = map.getZoom();
 		Webgl.redraw(zoom, bounds, this._rt, verts);
 		this._rt = 1;
+		this._canvas.style.display = 'block';
 	} else {
 		this._rt = 0;
+		var topLeft = this._map.containerPointToLayerPoint([0, 0]);
+		L.DomUtil.setPosition(this._canvas, topLeft);
+		// var ctx = this._canvas.getContext('2d');
+		// ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+	}
+	if (data.last) {
+		this._canvas1.style.display = 'none';
+		// this._canvas.style.display = 'block';
 	}
     this._frame = null;
 	// this.redraw();
   },
 
-  _redraw: function () {
-    // var size = this._map.getSize();
-    // var bounds = this._map.getBounds();
-    // var zoomScale = (size.x * 180) / (20037508.34 * (bounds.getEast()
-      // - bounds.getWest())); // resolution = 1/zoomScale
-    // var zoom = this._map.getZoom();
+  _resetDataManager: function(cmd) {
+	const bounds = this._map.getBounds();
+	const sw = bounds.getSouthWest();
+	const ne = bounds.getNorthEast();
+	const m1 = L.Projection.Mercator.project(L.latLng([sw.lat, sw.lng]));
+	const m2 = L.Projection.Mercator.project(L.latLng([ne.lat, ne.lng]));
 
-    // if (this._userDrawFunc) {
-      // this._userDrawFunc(this, {
-        // canvas: this._canvas,
-        // bounds: bounds,
-        // size: size,
-        // zoomScale: zoomScale,
-        // zoom: zoom,
-        // options: this.options
-      // });
-    // }
+	this.options.dataManager.postMessage({
+		cmd: 'addLayer',
+		layerId: this.options.layerId,
+		width: this._canvas.width,
+		height: this._canvas.height,
+		zoom: this._map.getZoom(),
+		bbox: [m1.x, m1.y, m2.x, m2.y],
+		bounds: this._map.getPixelBounds()
+	});
+	Webgl.init(this._canvas);
+    return this;
+  },
+
+  _redraw: function () {
 	const bounds = this._map.getBounds();
 	const sw = bounds.getSouthWest();
 	const ne = bounds.getNorthEast();
@@ -189,11 +185,13 @@ export default L.Layer.extend({
     this._frame = null;
   },
   _animateZoom: function (e) {
+	this._copyScreen();
 	let map = this._map;
-	L.DomUtil.setTransform(this._canvas,
-		map._latLngBoundsToNewLayerBounds(map.getBounds(), e.zoom, e.center).min,
-		map.getZoomScale(e.zoom)
-	);
+	let point = map._latLngBoundsToNewLayerBounds(map.getBounds(), e.zoom, e.center).min;
+	let scale = map.getZoomScale(e.zoom);
+	// console.log('_animateZoom', point, scale);
+	L.DomUtil.setTransform(this._canvas, point, scale);
+	L.DomUtil.setTransform(this._canvas1, point, scale);
   }
 });
 
