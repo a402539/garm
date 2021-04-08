@@ -1,19 +1,4 @@
-/*
-  Generic Canvas Overlay for leaflet.
-  ** Requires **
-  - Leaflet 0.7.3 or later
-  ** Copyright **
-  (C) 2014 Stanislav Sumbera
-  - http://blog.sumbera.com/2014/04/20/leaflet-canvas/
-  ** Maintained by **
-  (C) 2015 Alexander Schoedon <schoedon@uni-potsdam.de>
-  All rights reserved.
-  ** Credits **
-  Inspired by Stanislav Sumbera's Leaflet Canvas Overlay.
-  - http://blog.sumbera.com/2014/04/20/leaflet-canvas/
-  Inspired and portions taken from Leaflet Heat.
-  - https://github.com/Leaflet/Leaflet.heat
-*/
+import Webgl from './WebGL.js';
 
 /**
  * Leaflet canvas overlay class
@@ -48,18 +33,24 @@ export default L.Layer.extend({
 
   onAdd: function(map) {
     this._map = map;
-    this._canvas = L.DomUtil.create('canvas', 'leaflet-heatmap-layer');
+    var pane = map._panes.overlayPane;
+    this._canvas = L.DomUtil.create('canvas', 'leaflet-heatmap-layer', pane);
+    this._canvas1 = L.DomUtil.create('canvas', 'leaflet-heatmap-layer', pane);
 
     var size = this._map.getSize();
     this._canvas.width = size.x;
     this._canvas.height = size.y;
+    this._canvas1.width = size.x;
+    this._canvas1.height = size.y;
 
     var animated = this._map.options.zoomAnimation && L.Browser.any3d;
     L.DomUtil.addClass(this._canvas, 'leaflet-zoom-'
       + (animated ? 'animated' : 'hide'));
 
-    map._panes.overlayPane.appendChild(this._canvas);
+    // map._panes.overlayPane.appendChild(this._canvas);
 
+    map.on('mousedown', this._mousedown, this);
+    // map.on('movestart', this._movestart, this);
     map.on('moveend', this._reset, this);
     map.on('resize', this._resize, this);
 
@@ -71,12 +62,14 @@ export default L.Layer.extend({
 	const ne = bounds.getNorthEast();
 	const m1 = L.Projection.Mercator.project(L.latLng([sw.lat, sw.lng]));
 	const m2 = L.Projection.Mercator.project(L.latLng([ne.lat, ne.lng]));
-	const offscreen = this._canvas.transferControlToOffscreen();
+	Webgl.init(this._canvas);
+
+	// const offscreen = this._canvas.transferControlToOffscreen();
 	this.options.dataManager.postMessage({
 		cmd: 'addLayer',
 		layerId: this.options.layerId,
 		webGL: this.options.webGL,
-		canvas: offscreen,
+		// canvas: offscreen,
 		width: this._canvas.width,
 		height: this._canvas.height,
 		zoom: map.getZoom(),
@@ -84,7 +77,8 @@ export default L.Layer.extend({
 		bounds: map.getPixelBounds(),
 		dateBegin: this.options.dateBegin,
 		dateEnd: this.options.dateEnd,
-	}, [offscreen]);
+	// }, [offscreen]);
+	});
 
     this._reset();
   },
@@ -92,6 +86,8 @@ export default L.Layer.extend({
   onRemove: function(map) {
     map.getPanes().overlayPane.removeChild(this._canvas);
 
+    map.off('mousedown', this._mousedown, this);
+    // map.off('movestart', this._movestart, this);
     map.off('moveend', this._reset, this);
     map.off('resize', this._resize, this);
 
@@ -112,13 +108,47 @@ export default L.Layer.extend({
     this._canvas.height = resizeEvent.newSize.y;
   },
 
+  _mousedown: function() {
+	this._canvas1.getContext('2d').drawImage(this._canvas, 0, 0);
+	this._canvas1.style.display = 'block';
+	this._canvas.style.display = 'none';
+
+    var topLeft = this._map.containerPointToLayerPoint([0, 0]);
+    L.DomUtil.setPosition(this._canvas1, topLeft);
+	console.log('_viewreset', topLeft);
+  },
+
+  _movestart: function() {
+	this._canvas1.getContext('2d').drawImage(this._canvas, 0, 0);
+	this._canvas1.style.display = 'block';
+	this._canvas.style.display = 'none';
+
+    var topLeft = this._map.containerPointToLayerPoint([0, 0]);
+    L.DomUtil.setPosition(this._canvas1, topLeft);
+	console.log('_movestart', topLeft);
+  },
+
   _reset: function() {
     var topLeft = this._map.containerPointToLayerPoint([0, 0]);
+	console.log('moveend', topLeft);
     L.DomUtil.setPosition(this._canvas, topLeft);
+	this._canvas1.style.display = 'none';
+	this._canvas.style.display = 'block';
+    L.DomUtil.setPosition(this._canvas1, topLeft);
     this._redraw();
   },
-  rendered: function (bitmap) {
-	  // console.log('rendered', bitmap);
+  rendered: function (data) {
+	// console.log('rendered', data);
+	if (data.bitmap) {
+		let	verts = new Float32Array(data.bitmap);
+        const map = this._map;
+		const bounds = map.getPixelBounds();
+		const zoom = map.getZoom();
+		Webgl.redraw(zoom, bounds, this._rt, verts);
+		this._rt = 1;
+	} else {
+		this._rt = 0;
+	}
     this._frame = null;
 	// this.redraw();
   },
@@ -158,13 +188,13 @@ export default L.Layer.extend({
 
     this._frame = null;
   },
-	_animateZoom: function (e) {
-        let map = this._map;
-		L.DomUtil.setTransform(this._canvas,
-		    map._latLngBoundsToNewLayerBounds(map.getBounds(), e.zoom, e.center).min,
-			map.getZoomScale(e.zoom)
-		);
-	}
+  _animateZoom: function (e) {
+	let map = this._map;
+	L.DomUtil.setTransform(this._canvas,
+		map._latLngBoundsToNewLayerBounds(map.getBounds(), e.zoom, e.center).min,
+		map.getZoomScale(e.zoom)
+	);
+  }
 });
 
 

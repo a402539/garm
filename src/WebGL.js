@@ -13,7 +13,11 @@ export default {
 
   init: function (canvas) {
 	this.canvas = canvas;
-	var gl = this.gl = canvas.getContext('webgl', { antialias: true });
+	var gl = this.gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
+	// var gl = this.gl = canvas.getContext('webgl', { antialias: true });
+	// var gl = this.gl = canvas.getContext('webgl', { antialias: true, preserveDrawingBuffer: true });
+	// var gl = this.gl = canvas.getContext('webgl', { desynchronized: true, preserveDrawingBuffer: true });
+	// gl.enable(gl.SCISSOR_TEST);
 
 	var pixelsToWebGLMatrix = this.pixelsToWebGLMatrix = new Float32Array(16);
 	var mapMatrix = this.mapMatrix = new Float32Array(16);
@@ -70,9 +74,13 @@ export default {
 	gl.linkProgram(program);
 	gl.useProgram(program);
 
-	gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-	gl.enable(gl.BLEND);
-	gl.enable(gl.DEPTH_TEST);
+    gl.disable(gl.DEPTH_TEST);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+	// gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+	// gl.enable(gl.BLEND);
+	// gl.enable(gl.DEPTH_TEST);
 
 	// ----------------------------
 	// look up the locations for the inputs to our shaders.
@@ -82,6 +90,7 @@ export default {
 
 	pixelsToWebGLMatrix.set([2 / canvas.width, 0, 0, 0, 0, -2 / canvas.height, 0, 0, 0, 0, 0, 0, -1, 1, 0, 1]);
 	gl.viewport(0, 0, canvas.width, canvas.height);
+	// gl.scissor(0, 0, this.canvas.width, this.canvas.height);
 
 	gl.uniformMatrix4fv(u_matLoc, false, pixelsToWebGLMatrix);
 	// var verts = new Float32Array([]);
@@ -151,7 +160,6 @@ export default {
     this.scaleMatrix(mapMatrix, scale, scale);
 
     this.translateMatrix(mapMatrix, -bounds.min.x / scale, -bounds.min.y / scale);
-
 	var u_matLoc = gl.getUniformLocation(this.program, "u_matrix");
 	// gl.uniformMatrix4fv(u_matLoc, false, pixelsToWebGLMatrix);
     // -- attach matrix value to 'mapMatrix' uniform in shader
@@ -163,6 +171,7 @@ export default {
   drawTriangles: function (verts) {
 	const program = this.program;
 	const gl = this.gl;
+	gl.scissor(0, 0, this.canvas.width, this.canvas.height);
 	// gl.clearColor(1, 0, 0, 1);
 	// gl.clear(gl.COLOR_BUFFER_BIT);
 	var numPoints = verts.length / 5;
@@ -202,7 +211,7 @@ export default {
 	// var fsize = vertArray.BYTES_PER_ELEMENT;
 	gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
-    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    // gl.bindBuffer(gl.ARRAY_BUFFER, null);
     return vertBuffer;
   },
 

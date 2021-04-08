@@ -106,5 +106,7 @@ bin
 obj
 appsettings.*
 wwwroot/main.*
+wwwroot/sw.*
 wwwroot/dataManager.*
 tiles
+package-loc.json

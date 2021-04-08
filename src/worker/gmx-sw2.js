@@ -59,9 +59,9 @@ self.addEventListener('fetch', function(event) {
 });
 
 
- const appendVertex = (coords) => {
+ const appendVertex = (coords, currentColor) => {
     var pixels = [];
-    var currentColor = [Math.random(), Math.random(), Math.random()]; //[0.1, 0.6, 0.1];
+    // var currentColor = [Math.random(), Math.random(), Math.random()]; //[0.1, 0.6, 0.1];
     // var currentColor = [0, 0, 1]; //[0.1, 0.6, 0.1];
     var flattened = earcut.flatten(coords);
     var result = earcut(flattened.vertices, flattened.holes, flattened.dimensions);
@@ -121,7 +121,8 @@ function fetchAndCache(request) {
 							});
 						
 						});
-						let v1 = appendVertex(coords);
+						const currentColor = [Math.random(), Math.random(), Math.random()]; //[0.1, 0.6, 0.1];
+						let v1 = appendVertex(coords, currentColor);
 						len += v1.length;
 						verts1.push(v1);
 					}

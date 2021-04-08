@@ -17,7 +17,7 @@ export default class Map extends Component {
            switch(cmd) {
                case 'rendered':
                    if (this._layers[layerId]) {
-                       this._layers[layerId].rendered(data.bitmap);
+                       this._layers[layerId].rendered(data);
                    }
                    break;
                case 'mouseover':

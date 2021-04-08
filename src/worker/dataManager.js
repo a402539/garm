@@ -70,23 +70,28 @@ async function getTiles (zoom, bbox, bounds) {
 	// });
 
 		const layerData = visibleLayers[layerId];
-		const canvas = layerData.canvas;
-		if (layerData.webGL && !layerData.glHash) {
-			layerData.glHash = Webgl.init(canvas);
-			// layerData.glHash = initWebGL(canvas);
-		}
+		// const canvas = layerData.canvas;
+		// if (layerData.webGL && !layerData.glHash) {
+			// layerData.glHash = Webgl.init(canvas);
+		// }
 		// const glHash = layerData.glHash;
-		const gl = Webgl.gl;
+		// const gl = Webgl.gl;
 		// layerData.glHash.gl.clear(layerData.glHash.gl.COLOR_BUFFER_BIT);
 		layerData.tm = Date.now();
 		let rt = 0;
-/*
 		tiles.forEach(({z, x, y}, i) => {		
 			const tKey = `${x}:${y}:${z}`;
 			fetch(`/tile/${layerId}/${z}/${x}/${y}`)
 				.then(res => res.blob())
 				.then(blob => blob.arrayBuffer())
 				.then(buf => {
+	self.postMessage({
+		cmd: 'rendered',
+		layerId,
+		z, x, y,
+		bitmap: buf
+	}, [ buf ]);
+return;
 					let	verts = new Float32Array(buf);
 					// requestAnimationFrame(ev => {
 					// layerData.glHash.verts = verts;
@@ -109,7 +114,8 @@ console.log('arr1:', rt, tKey, renderNum, moveendNum, verts.length, Date.now() -
 					// });
 				});
 		});
-*/
+/*
+
 
 		let controller = new AbortController();
 		const promise = (z, x, y, nm) => {		
@@ -131,7 +137,7 @@ console.log('arr1:', rt, tKey, renderNum, moveendNum, verts.length, Date.now() -
 					console.log('error:', nm, moveendNum, error);
 					 // Do something with the error object
 				})
-   };
+		};
 		const promises = tiles.map(({z, x, y}) => {		
 			return promise(z, x, y, moveendNum);
 		});
@@ -145,6 +151,7 @@ console.log('arr1:', rt, tKey, renderNum, moveendNum, verts.length, Date.now() -
 			Webgl.redraw(zoom, bounds, 0, verts);
 			console.log('arr1:', renderNum, moveendNum, items.length, verts.length, Date.now() - layerData.tm);
 		});
+*/
 		renderNum++;
 		// console.log('layer tm:', renderNum, cnt, Date.now() - tm);
 		bitmapToMain(layerId, canvas);
