@@ -48,7 +48,7 @@ self.addEventListener('fetch', event => {
                     const responseToCache = response.clone();
                     const url = new URL(responseToCache.url);
                     if (rx.test(url.pathname)) {
-                        responseToCache.blob()
+                        return responseToCache.blob()
                         .then(blob => blob.arrayBuffer())
                         .then(buf => {
                             const m = rx.exec(url.pathname);
@@ -71,14 +71,15 @@ self.addEventListener('fetch', event => {
                             caches.open(CACHE_NAME).then(cache => {
                                 cache.put(event.request, new Response(JSON.stringify(fs), {headers: {'Content-Type': 'application/json'}}));
                             });
+							return new Response(JSON.stringify(fs), {headers: {'Content-Type': 'application/json'}});
                         });
                     }
                     else {                        
-                        caches.open(CACHE_NAME).then(cache => {
+                        return caches.open(CACHE_NAME).then(cache => {
                             cache.put(event.request, responseToCache);
-                        });
+							return response;
+                       });
                     }
-                    return response;
                 }
             );
         })
