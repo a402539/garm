@@ -54,16 +54,36 @@ export default [
             }),
         ],
     },       
+    // {
+    //     input: 'src/Worker/gmx-sw2.js',
+    //     output: { 
+    //         file: 'wwwroot/sw.js',
+    //         format: 'iife',
+    //         sourcemap: true,
+    //         name: 'ServiceWorker',
+    //         globals: {
+    //             'leaflet': 'L',
+    //         },
+    //     },
+    //     plugins: [                      
+    //         resolve({moduleDirectories: ['node_modules', 'src']}),            
+    //         commonjs(),
+    //         json(),
+    //         babel({    
+    //             babelHelpers: 'bundled',            
+    //             extensions: ['.js', '.mjs'],
+    //             exclude: ['node_modules/@babel/**', 'node_modules/core-js/**'],
+    //             include: ['src/**', 'node_modules/**']
+    //         }),
+    //     ],
+    // }, 
     {
-        input: 'src/Worker/gmx-sw2.js',
+        input: 'src/Worker/svc.js',
         output: { 
             file: 'wwwroot/sw.js',
             format: 'iife',
             sourcemap: true,
             name: 'ServiceWorker',
-            globals: {
-                'leaflet': 'L',
-            },
         },
         plugins: [                      
             resolve({moduleDirectories: ['node_modules', 'src']}),            

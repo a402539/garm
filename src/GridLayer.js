@@ -15,16 +15,16 @@ export default L.GridLayer.extend({
         
         const {z, x, y} = coords;
 		let ctx = tile.getContext('2d');
-                
-        fetch(`tile/${this.options.layerId}/${z}/${x}/${y}`)
+
+        fetch(`tile/${this.options.layerId}/${z}/${x}/${y}.pbf`)
         .then(resp => resp.blob())
         // .then(blob => blob.arrayBuffer())
         .then(buf => {
-			let image = new Image(255, 255);
-			image.onload = () => ctx.drawImage(image, 0, 0);			
+			var image = new Image(255, 255);;				
+			image.onload = () => ctx.drawImage(image, 0, 0);							
 			image.src = URL.createObjectURL(buf);
 			done(error, tile);
-		});       
+		});        
 
         return tile;
     }

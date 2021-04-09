@@ -14,7 +14,7 @@ export default class MapController extends Controller {
     constructor({container}) {
         super();
         this._layers = {};        
-        this._map = new Map(container, {center: [55.45, 37.37], zoom: 1});
+        this._map = new Map(container, {center: [55.45, 37.37], zoom: 6});
     }
     async create() {
         let dlg = new MapDialog.Create();

@@ -60,9 +60,9 @@ self.addEventListener('fetch', function(event) {
 });
 
 
- const appendVertex = (coords) => {
+ const appendVertex = (coords, currentColor) => {
     var pixels = [];
-    var currentColor = [Math.random(), Math.random(), Math.random()]; //[0.1, 0.6, 0.1];
+    // var currentColor = [Math.random(), Math.random(), Math.random()]; //[0.1, 0.6, 0.1];
     // var currentColor = [0, 0, 1]; //[0.1, 0.6, 0.1];
     var flattened = earcut.flatten(coords);
     var result = earcut(flattened.vertices, flattened.holes, flattened.dimensions);
@@ -98,25 +98,27 @@ function fetchAndCache(request) {
 			.then(blob => blob.arrayBuffer())
 			.then(buf => {
 				let arr = request.url.split('/');
-				let y = parseInt(arr.pop(), 10);
-				let x = parseInt(arr.pop(), 10);
-				let z = parseInt(arr.pop(), 10);								
+				let y = arr.pop();
+				let x = arr.pop();
+				let z = arr.pop();				
 				const sc = 256 / 4096;
-				// const sc = 1;
 				const {layers} = new VectorTile(new Protobuf(buf));
 				var verts1 = [];
 				let len = 0;
 				Object.keys(layers).forEach(k => {
-					const layer = layers[k];					
+					const layer = layers[k];
+					console.log('features:',layer.length,', x:', x,', y:', y,', z:', z);
 					for (let i = 0; i < layer.length; ++i) {
-						const vf = layer.feature(i);							
-						const properties = vf.properties;
+						const vf = layer.feature(i);						
 						const coordinates = vf.loadGeometry();
-// console.log('coordinates', z, x, y, coordinates);
-							const coords = coordinates.map(d => {
-							return d.map(d1 => [d1.x * sc, d1.y * sc]);						
+						const coords = coordinates.map(d => {
+							return d.map(d1 => {
+								return [d1.x * sc, d1.y * sc];
+							});
+						
 						});
-						let v1 = appendVertex(coords);
+						const currentColor = [Math.random(), Math.random(), Math.random()]; //[0.1, 0.6, 0.1];
+						let v1 = appendVertex(coords, currentColor);
 						len += v1.length;
 						verts1.push(v1);
 					}

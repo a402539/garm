@@ -59,18 +59,12 @@ namespace garm
                 // db.Database.ExecuteSqlRaw(GetSql("postgis-vt-util.sql"));
             }
 
-            app.MapWhen(
-                context => VectorTile.IsValid(context.Request.Path.ToString()),
-                appBranch => {
-                    appBranch.UseVectorTile();
-                }
-            );
             // app.MapWhen(
-            //     context => BoxTiles.IsValid(context.Request.Path.ToString()),
+            //     context => VectorTile.IsValid(context.Request.Path.ToString()),
             //     appBranch => {
-            //         appBranch.UseBoxTiles();
+            //         appBranch.UseVectorTile();
             //     }
-            // );
+            // );            
 
             app.UseHttpsRedirection();
             app.UseDefaultFiles();
