@@ -1,7 +1,6 @@
 import {VectorTile} from '@mapbox/vector-tile';
 import Protobuf from 'pbf';
 import earcut from 'earcut';
-import WebGL from 'WebGL.js';
 
 var CACHE_NAME = 'Geomixer';
 var OFFLINE_TILE = './offline.png';
@@ -85,9 +84,6 @@ self.addEventListener('fetch', function(event) {
 	return verts;
 }
 
-const offscreen = new OffscreenCanvas(256, 256);
-const wgl = new WebGL(offscreen);
-
 //
 // Helper to fetch and store in cache.
 //
@@ -98,22 +94,30 @@ function fetchAndCache(request) {
 			.then(blob => blob.arrayBuffer())
 			.then(buf => {
 				let arr = request.url.split('/');
-				let y = arr.pop();
-				let x = arr.pop();
-				let z = arr.pop();				
-				const sc = 256 / 4096;
+				let y = arr.pop(); let x = arr.pop(); let z = arr.pop();
+				let tm = Date.now();
+				const tw = 1 << (8 - z);
+				let x0 = x * tw - 0;
+				if (x0 + tw < 0) {
+					x0 += Math.pow(2, z) * tw;
+				}
+				const y0 = y * tw - 0;
+				let sc;
 				const {layers} = new VectorTile(new Protobuf(buf));
 				var verts1 = [];
 				let len = 0;
 				Object.keys(layers).forEach(k => {
 					const layer = layers[k];
-					console.log('features:',layer.length,', x:', x,', y:', y,', z:', z);
+					if (!sc) {
+						sc = tw / layer.extent
+					}
 					for (let i = 0; i < layer.length; ++i) {
-						const vf = layer.feature(i);						
+						const vf = layer.feature(i);							
+						const properties = vf.properties;
 						const coordinates = vf.loadGeometry();
 						const coords = coordinates.map(d => {
 							return d.map(d1 => {
-								return [d1.x * sc, d1.y * sc];
+								return [x0 + d1.x * sc, y0 + d1.y * sc];
 							});
 						
 						});
@@ -128,17 +132,18 @@ function fetchAndCache(request) {
 				verts1.forEach(it => {
 					verts.set(it, cnt);
 					cnt += it.length;
-				});				
-				wgl.render(z, null, verts);
-				return offscreen.convertToBlob();
+				});
+				return verts;
 			})
-			.then(blob => {				
+			.then(function (verts) {
+				let str = verts.buffer;
+				// let str = JSON.stringify(verts);
 				caches.open(CACHE_NAME).then(function(cache) {
-					let resp = new Response(blob);
+					let resp = new Response(str);
 					cache.put(request, resp);
 					return resp;
-				});				
-				return new Response(blob);
+				});
+				return new Response(str);
 		});
 	} else {
 		return fetch(request)

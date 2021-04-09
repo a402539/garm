@@ -59,12 +59,15 @@ export default class AppController extends Controller {
             this._controllers[k].notification = this._notification;
         });
 		navigator.serviceWorker.register('./sw.js')
-		  .then(registration => {
+		  .then(function(registration) {
 			if (registration.active) {
 				// L.gmx.serviceWorker = registration.active;
-			}			
+			}
+			console.log('ServiceWorker registration successful with scope: ', registration.scope);
 		  })
-		  .catch(err => console.log('ServiceWorker registration failed: ', err));
+		  .catch(function(err) {
+			console.log('ServiceWorker registration failed: ', err);
+		  });
 
     }
 
