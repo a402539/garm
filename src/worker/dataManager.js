@@ -4,11 +4,8 @@ import {VectorTile} from '@mapbox/vector-tile';
 import Protobuf from 'pbf';
 import earcut from 'earcut';
 
-let canvas;
 let abortController;
 let visibleLayers = {};
-let renderNum = 0;
-let moveendNum = 0;
 
 async function getBoxTiles(signal, bbox) {
 	const [xmin, ymin, xmax, ymax] = bbox;
@@ -42,7 +39,7 @@ async function getTiles (zoom, bbox, bounds) {
 		let last = tiles.length - 1;
 		tiles.forEach(({z, x, y}) => {		
 			const tKey = `${x}:${y}:${z}`;
-			fetch(`/tile/${layerId}/${z}/${x}/${y}`)
+			fetch(`/tile/${layerId}/${z}/${x}/${y}`, {signal: abortController.signal})
 				.then(res => res.blob())
 				.then(blob => blob.arrayBuffer())
 				.then(buf => {
@@ -61,17 +58,13 @@ async function getTiles (zoom, bbox, bounds) {
 	});
 }
 
-addEventListener('tilesLoaded', getTiles);
-
 onmessage = function(evt) {    
 	const data = evt.data || {};
-	const {cmd, layerId, zoom, bbox, bounds, width, height, canvas} = data;
+	const {cmd, layerId, zoom, bbox, bounds} = data;
 	// console.warn(' command ', data);
 	switch(cmd) {
 		case 'addLayer':
-			visibleLayers[layerId] = {
-				canvas
-			};
+			visibleLayers[layerId] = {};
 			getTiles(zoom, bbox, bounds);
 			break;
 		case 'removeLayer':
@@ -80,11 +73,8 @@ onmessage = function(evt) {
 				getTiles(zoom, bbox, bounds);
 			}
 			break;
-		case 'drawScreen':
-			getTiles(zoom, bbox, bounds);
-			break;
 		case 'moveend':
-			// getTiles(zoom, bbox, bounds);
+			getTiles(zoom, bbox, bounds);
 			break;
 		default:
 			console.warn('Warning: Bad command ', data);
