@@ -32,20 +32,15 @@ export default [
         ],
     }, 
     {
-        input: 'src/Worker/dataManager.js',
+        input: 'src/workers/tile.js',
         output: { 
-            file: 'wwwroot/dataManager.js',
-            format: 'iife',
-            sourcemap: true,
-            name: 'DataManager',
-            globals: {
-                'leaflet': 'L',
-            },
+            file: 'wwwroot/tile.js',
+            format: 'es',
+            sourcemap: true,            
         },
         plugins: [                      
             resolve({moduleDirectories: ['node_modules', 'src']}),            
-            commonjs(),
-            json(),
+            commonjs(),            
             babel({    
                 babelHelpers: 'bundled',            
                 extensions: ['.js', '.mjs'],
@@ -53,28 +48,5 @@ export default [
                 include: ['src/**', 'node_modules/**']
             }),
         ],
-    },       
-    {
-        input: 'src/Worker/gmx-sw2.js',
-        output: { 
-            file: 'wwwroot/sw.js',
-            format: 'iife',
-            sourcemap: true,
-            name: 'ServiceWorker',
-            globals: {
-                'leaflet': 'L',
-            },
-        },
-        plugins: [                      
-            resolve({moduleDirectories: ['node_modules', 'src']}),            
-            commonjs(),
-            json(),
-            babel({    
-                babelHelpers: 'bundled',            
-                extensions: ['.js', '.mjs'],
-                exclude: ['node_modules/@babel/**', 'node_modules/core-js/**'],
-                include: ['src/**', 'node_modules/**']
-            }),
-        ],
-    },       
+    },         
 ];

@@ -67,13 +67,14 @@ namespace garm
             await using var conn = new NpgsqlConnection(Configuration.GetConnectionString("Default"));
             await conn.OpenAsync();
             // string sql = $"SELECT pbf FROM geo.mvt WHERE layer_id = {layerId} AND x = {x} AND y = {y} AND z = {z}";
-            string sql = "SELECT geo.get_mvt(@layerid, @z, @x, @y)";
+            string sql = "SELECT geo.get_mvt(@layerid, @z, @x, @y, @threshold)";
             await using (var cmd = new NpgsqlCommand(sql, conn))
             {
                 cmd.Parameters.AddWithValue("layerid", layerId);
                 cmd.Parameters.AddWithValue("z", z);
                 cmd.Parameters.AddWithValue("x", x);
-                cmd.Parameters.AddWithValue("y", y);                
+                cmd.Parameters.AddWithValue("y", y);
+                cmd.Parameters.AddWithValue("threshold", 1000);
 
                 return await cmd.ExecuteScalarAsync() as byte[];                
             }
